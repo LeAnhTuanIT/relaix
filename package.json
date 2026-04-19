@@ -1,0 +1,23 @@
+{
+  "name": "relaix",
+  "version": "1.0.0",
+  "description": "Monorepo with NestJS backend, Next.js frontend, and shared libraries",
+  "private": true,
+  "packageManager": "bun@1.2.19",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "format": "turbo run format",
+    "test": "turbo run test",
+    "type-check": "turbo run type-check",
+    "clean": "turbo clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}
