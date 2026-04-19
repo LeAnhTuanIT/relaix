@@ -44,6 +44,7 @@ services:
       NODE_ENV: production
       PORT: 3001
       FRONTEND_URL: http://localhost:3000
+      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017/${MONGO_DB}?authSource=admin
     depends_on:
       mongodb:
         condition: service_healthy
