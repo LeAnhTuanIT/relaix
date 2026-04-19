@@ -46,8 +46,8 @@ export class MongoConversationRepository extends ConversationRepository {
     return new ConversationEntity(
       (doc._id as Types.ObjectId).toHexString(),
       doc.title,
-      (doc as any).createdAt,
-      (doc as any).updatedAt,
+      doc.createdAt,
+      doc.updatedAt,
     );
   }
 }

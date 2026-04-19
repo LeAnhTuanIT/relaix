@@ -47,7 +47,7 @@ export class MongoMessageRepository extends MessageRepository {
       (doc.conversationId as Types.ObjectId).toHexString(),
       doc.role,
       doc.content,
-      (doc as any).createdAt,
+      doc.createdAt,
       doc.fileUrl,
       doc.fileName,
     );
