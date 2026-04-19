@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { type Message } from '@/lib/api';
-import { FileText } from 'lucide-react';
+import { FilePreview } from './FilePreview';
 
 interface MessageBubbleProps {
   message: Message;
@@ -13,7 +13,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
   return (
     <div className={cn('flex gap-3 mb-4', isUser ? 'flex-row-reverse' : 'flex-row')}>
-      {/* Avatar */}
       <div
         className={cn(
           'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold',
@@ -23,19 +22,13 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         {isUser ? 'U' : 'AI'}
       </div>
 
-      {/* Bubble */}
       <div className={cn('max-w-[70%] flex flex-col gap-1', isUser ? 'items-end' : 'items-start')}>
-        {message.fileName && (
-          <div
-            className={cn(
-              'flex items-center gap-2 px-3 py-2 rounded-lg text-sm',
-              isUser ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700',
-            )}
-          >
-            <FileText size={14} />
-            <span className="truncate max-w-[200px]">{message.fileName}</span>
+        {message.fileUrl && message.fileName ? (
+          <div className={cn(isUser ? 'text-white' : 'text-gray-700')}>
+            <FilePreview fileUrl={message.fileUrl} fileName={message.fileName} />
           </div>
-        )}
+        ) : null}
+
         <div
           className={cn(
             'px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words',
@@ -46,6 +39,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         >
           {message.content}
         </div>
+
         <span className="text-xs text-gray-400">
           {new Date(message.createdAt).toLocaleTimeString('vi-VN', {
             hour: '2-digit',

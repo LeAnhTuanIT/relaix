@@ -13,6 +13,9 @@ build
 .next
 out
 
+# Uploads
+uploads/
+
 # Misc
 .DS_Store
 *.pem
