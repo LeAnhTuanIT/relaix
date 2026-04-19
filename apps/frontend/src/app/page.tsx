@@ -1,43 +1,67 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
+import { Sidebar } from '@/shared/components/layout/Sidebar';
+import { ChatWindow } from '@/modules/chat/components/ChatWindow';
+import { ChatInput } from '@/modules/chat/components/ChatInput';
+import { HomePage } from '@/modules/home/components/HomePage';
+import { useChat } from '@/modules/chat/hooks/useChat';
+import { ArrowLeft, Plus } from 'lucide-react';
 
-export default function Home() {
-  const [message, setMessage] = useState<string>("");
-  const [loading, setLoading] = useState(true);
+const APP_NAME = 'AI Chat';
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/`
-        );
-        const data = await response.text();
-        setMessage(data);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setMessage("Failed to fetch from backend");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+export default function ChatPage() {
+  const {
+    activeId,
+    setActiveId,
+    messages,
+    loadingMessages,
+    sending,
+    pendingFile,
+    setPendingFile,
+    handleCreate,
+    handleSend,
+    handleHomePageSend,
+  } = useChat();
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4">
-      <h1 className="text-4xl font-bold">Relaix Monorepo</h1>
-      <div className="rounded-lg border border-gray-300 p-4">
-        {loading ? (
-          <p className="text-gray-600">Loading...</p>
+    <div className="flex h-screen bg-white overflow-hidden">
+      <Sidebar />
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {activeId ? (
+          <>
+            <header className="flex items-center gap-3 px-6 py-3 border-b border-gray-100 flex-shrink-0">
+              <button
+                onClick={() => setActiveId(null)}
+                className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+              >
+                <ArrowLeft size={16} />
+                Back
+              </button>
+              <div className="flex-1" />
+              <button
+                onClick={handleCreate}
+                className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 transition-colors"
+              >
+                <Plus size={14} />
+                New
+              </button>
+            </header>
+            <ChatWindow messages={messages} loading={loadingMessages} sending={sending} />
+            <div className="px-4 pb-6 pt-2 max-w-2xl mx-auto w-full flex-shrink-0">
+              <ChatInput
+                onSend={handleSend}
+                onFileSelect={setPendingFile}
+                disabled={sending}
+                pendingFile={pendingFile}
+                onClearFile={() => setPendingFile(null)}
+                appName={APP_NAME}
+              />
+            </div>
+          </>
         ) : (
-          <p className="text-lg">{message}</p>
+          <HomePage onSend={handleHomePageSend} sending={sending} />
         )}
-      </div>
-      <p className="text-sm text-gray-500">
-        NestJS Backend + Next.js Frontend + Shared Libraries
-      </p>
-    </main>
+      </main>
+    </div>
   );
 }

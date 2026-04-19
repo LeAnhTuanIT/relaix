@@ -12,6 +12,10 @@ dist
 build
 .next
 out
+next-env.d.ts
+
+# Uploads
+uploads/
 
 # Misc
 .DS_Store
