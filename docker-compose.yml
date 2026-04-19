@@ -36,7 +36,8 @@ services:
   backend:
     build:
       context: .
-      dockerfile: apps/backend/Dockerfile
+      dockerfile: Dockerfile
+      target: backend-runner
     ports:
       - "3001:3001"
     environment:
@@ -59,7 +60,8 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: apps/frontend/Dockerfile
+      dockerfile: Dockerfile
+      target: frontend-runner
       args:
         # Giá trị này được bake vào client bundle lúc build
         # Đây là URL mà BROWSER dùng để gọi backend
