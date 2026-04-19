@@ -1,6 +1,6 @@
 'use client';
 
-import { FileText, Image as ImageIcon, Download } from 'lucide-react';
+import { FileText, Download } from 'lucide-react';
 
 interface FilePreviewProps {
   fileUrl: string;
