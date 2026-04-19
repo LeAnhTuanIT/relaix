@@ -8,45 +8,79 @@ interface MessageBubbleProps {
   message: Message;
 }
 
+const ASSISTANT_NAME = 'AI Chat';
+
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === 'user';
 
-  return (
-    <div className={cn('flex gap-3 mb-4', isUser ? 'flex-row-reverse' : 'flex-row')}>
-      <div
-        className={cn(
-          'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold',
-          isUser ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700',
-        )}
-      >
-        {isUser ? 'U' : 'AI'}
-      </div>
-
-      <div className={cn('max-w-[70%] flex flex-col gap-1', isUser ? 'items-end' : 'items-start')}>
-        {message.fileUrl && message.fileName ? (
-          <div className={cn(isUser ? 'text-white' : 'text-gray-700')}>
-            <FilePreview fileUrl={message.fileUrl} fileName={message.fileName} />
+  if (isUser) {
+    return (
+      <div className="flex justify-end mb-6">
+        <div className="max-w-[60%]">
+          {message.fileUrl && message.fileName ? (
+            <div className="mb-2 flex justify-end">
+              <FilePreview fileUrl={message.fileUrl} fileName={message.fileName} />
+            </div>
+          ) : null}
+          <div className="bg-gray-100 text-gray-800 rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words inline-block">
+            {message.content}
           </div>
-        ) : null}
-
-        <div
-          className={cn(
-            'px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words',
-            isUser
-              ? 'bg-blue-600 text-white rounded-tr-sm'
-              : 'bg-gray-100 text-gray-800 rounded-tl-sm',
-          )}
-        >
-          {message.content}
         </div>
-
-        <span className="text-xs text-gray-400">
-          {new Date(message.createdAt).toLocaleTimeString('vi-VN', {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </span>
       </div>
+    );
+  }
+
+  return (
+    <div className="mb-6">
+      <p className="text-sm font-semibold text-gray-800 mb-2">{ASSISTANT_NAME}</p>
+      <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-words">
+        <FormattedContent content={message.content} />
+      </div>
+      <span className="text-xs text-gray-400 mt-1 block">
+        {new Date(message.createdAt).toLocaleTimeString('vi-VN', {
+          hour: '2-digit',
+          minute: '2-digit',
+        })}
+      </span>
     </div>
   );
+}
+
+function FormattedContent({ content }: { content: string }) {
+  // Simple markdown-like formatting: **bold** and bullet lines
+  const lines = content.split('\n');
+  return (
+    <>
+      {lines.map((line, i) => {
+        const trimmed = line.trim();
+        const isBullet = trimmed.startsWith('- ') || trimmed.startsWith('• ');
+        const text = isBullet ? trimmed.slice(2) : line;
+        const formatted = renderBold(text);
+
+        if (isBullet) {
+          return (
+            <div key={i} className="flex gap-2 mb-1">
+              <span className="text-gray-400 mt-0.5">•</span>
+              <span>{formatted}</span>
+            </div>
+          );
+        }
+        return (
+          <p key={i} className={cn('mb-1', !trimmed && 'h-2')}>
+            {formatted}
+          </p>
+        );
+      })}
+    </>
+  );
+}
+
+function renderBold(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
 }
