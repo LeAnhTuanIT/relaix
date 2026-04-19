@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Res,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -14,15 +15,30 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
+import { Response } from 'express';
 import { CreateConversationUseCase } from '../application/use-cases/create-conversation.use-case';
 import { GetConversationsUseCase } from '../application/use-cases/get-conversations.use-case';
 import { DeleteConversationUseCase } from '../application/use-cases/delete-conversation.use-case';
 import { GetMessagesUseCase } from '../application/use-cases/get-messages.use-case';
 import { SendMessageUseCase } from '../application/use-cases/send-message.use-case';
+import { StreamMessageUseCase } from '../application/use-cases/stream-message.use-case';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { SendMessageDto } from './dto/send-message.dto';
+import { MessageEntity } from '../domain/entities/message.entity';
 
 const UPLOAD_DIR = join(process.cwd(), 'uploads');
+
+function toMessageDto(msg: MessageEntity) {
+  return {
+    _id: msg.id,
+    conversationId: msg.conversationId,
+    role: msg.role,
+    content: msg.content,
+    fileUrl: msg.fileUrl,
+    fileName: msg.fileName,
+    createdAt: msg.createdAt,
+  };
+}
 
 @Controller('chat')
 export class ChatController {
@@ -32,6 +48,7 @@ export class ChatController {
     private readonly deleteConversationUseCase: DeleteConversationUseCase,
     private readonly getMessagesUseCase: GetMessagesUseCase,
     private readonly sendMessageUseCase: SendMessageUseCase,
+    private readonly streamMessageUseCase: StreamMessageUseCase,
   ) {}
 
   @Post('conversations')
@@ -58,6 +75,41 @@ export class ChatController {
   @Post('conversations/:id/messages')
   sendMessage(@Param('id') id: string, @Body() dto: SendMessageDto) {
     return this.sendMessageUseCase.execute(id, dto);
+  }
+
+  @Post('conversations/:id/messages/stream')
+  async streamMessage(
+    @Param('id') id: string,
+    @Body() dto: SendMessageDto,
+    @Res() res: Response,
+  ) {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders();
+
+    const send = (data: object) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+
+    try {
+      const { userMessage, textStream, commit } = await this.streamMessageUseCase.execute(id, dto);
+
+      send({ type: 'user_message', message: toMessageDto(userMessage) });
+
+      let fullText = '';
+      for await (const chunk of textStream) {
+        fullText += chunk;
+        send({ type: 'chunk', text: chunk });
+      }
+
+      const aiMessage = await commit(fullText);
+      send({ type: 'done', message: toMessageDto(aiMessage) });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Stream error';
+      send({ type: 'error', message });
+    } finally {
+      res.end();
+    }
   }
 
   @Post('upload')

@@ -17,6 +17,12 @@ export interface Conversation {
   updatedAt: string;
 }
 
+export type StreamEvent =
+  | { type: 'user_message'; message: Message }
+  | { type: 'chunk'; text: string }
+  | { type: 'done'; message: Message }
+  | { type: 'error'; message: string };
+
 export const chatApi = {
   async getConversations(): Promise<Conversation[]> {
     const res = await fetch(`${API_URL}/chat/conversations`);
@@ -44,19 +50,39 @@ export const chatApi = {
     return res.json();
   },
 
-  async sendMessage(
+  async *streamMessage(
     conversationId: string,
     content: string,
     fileUrl?: string,
     fileName?: string,
-  ): Promise<Message[]> {
-    const res = await fetch(`${API_URL}/chat/conversations/${conversationId}/messages`, {
+  ): AsyncIterable<StreamEvent> {
+    const res = await fetch(`${API_URL}/chat/conversations/${conversationId}/messages/stream`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content, fileUrl, fileName }),
     });
-    if (!res.ok) throw new Error('Failed to send message');
-    return res.json();
+
+    if (!res.ok || !res.body) throw new Error('Stream failed');
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split('\n\n');
+      buffer = parts.pop() ?? '';
+
+      for (const part of parts) {
+        const line = part.trim();
+        if (line.startsWith('data: ')) {
+          yield JSON.parse(line.slice(6)) as StreamEvent;
+        }
+      }
+    }
   },
 
   async uploadFile(file: File): Promise<{ fileUrl: string; fileName: string }> {

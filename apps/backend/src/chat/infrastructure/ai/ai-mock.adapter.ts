@@ -14,4 +14,13 @@ export class AiMockAdapter extends AiProviderPort {
     const base = this.responses[Math.floor(Math.random() * this.responses.length)];
     return `${base} (Phản hồi cho: "${userContent.slice(0, 30)}...")`;
   }
+
+  async *streamResponse(userContent: string): AsyncIterable<string> {
+    const full = await this.generateResponse(userContent);
+    const words = full.split(' ');
+    for (const word of words) {
+      yield word + ' ';
+      await new Promise((r) => setTimeout(r, 60));
+    }
+  }
 }

@@ -10,14 +10,15 @@ interface ChatWindowProps {
   messages: Message[];
   loading: boolean;
   sending: boolean;
+  streamingText?: string;
 }
 
-export function ChatWindow({ messages, loading, sending }: ChatWindowProps) {
+export function ChatWindow({ messages, loading, sending, streamingText }: ChatWindowProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, sending]);
+  }, [messages, streamingText, sending]);
 
   if (loading) {
     return (
@@ -34,7 +35,14 @@ export function ChatWindow({ messages, loading, sending }: ChatWindowProps) {
           <MessageBubble key={msg._id} message={msg} />
         ))}
 
-        {sending && (
+        {streamingText && (
+          <div className="mb-6">
+            <p className="text-sm font-semibold text-gray-800 mb-2">AI Chat</p>
+            <p className="text-sm text-gray-700 whitespace-pre-wrap">{streamingText}</p>
+          </div>
+        )}
+
+        {sending && !streamingText && (
           <div className="mb-6">
             <p className="text-sm font-semibold text-gray-800 mb-2">AI Chat</p>
             <div className="flex items-center gap-1">

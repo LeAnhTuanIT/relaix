@@ -6,6 +6,7 @@ import { GetConversationsUseCase } from '../application/use-cases/get-conversati
 import { DeleteConversationUseCase } from '../application/use-cases/delete-conversation.use-case';
 import { GetMessagesUseCase } from '../application/use-cases/get-messages.use-case';
 import { SendMessageUseCase } from '../application/use-cases/send-message.use-case';
+import { StreamMessageUseCase } from '../application/use-cases/stream-message.use-case';
 import { ConversationRepository } from '../domain/repositories/conversation.repository';
 import { MessageRepository } from '../domain/repositories/message.repository';
 import { AiProviderPort } from '../domain/ports/ai-provider.port';
@@ -32,6 +33,7 @@ import { Message, MessageSchema } from '../infrastructure/persistence/schemas/me
     DeleteConversationUseCase,
     GetMessagesUseCase,
     SendMessageUseCase,
+    StreamMessageUseCase,
     { provide: ConversationRepository, useClass: MongoConversationRepository },
     { provide: MessageRepository, useClass: MongoMessageRepository },
     { provide: AiProviderPort, useClass: AiMockAdapter },

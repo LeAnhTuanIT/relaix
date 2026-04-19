@@ -16,6 +16,7 @@ export default function ChatPage() {
     messages,
     loadingMessages,
     sending,
+    streamingText,
     pendingFile,
     setPendingFile,
     handleCreate,
@@ -46,7 +47,12 @@ export default function ChatPage() {
                 New
               </button>
             </header>
-            <ChatWindow messages={messages} loading={loadingMessages} sending={sending} />
+            <ChatWindow
+              messages={messages}
+              loading={loadingMessages}
+              sending={sending}
+              streamingText={streamingText}
+            />
             <div className="px-4 pb-6 pt-2 max-w-2xl mx-auto w-full flex-shrink-0">
               <ChatInput
                 onSend={handleSend}

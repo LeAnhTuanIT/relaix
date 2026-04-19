@@ -1,97 +1,163 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { chatApi, type Message } from '@/shared/api/chat.api';
+import { useCallback, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { chatApi, type Conversation, type Message } from '@/shared/api/chat.api';
 
 export function useChat() {
-  const [conversations, setConversations] = useState<{ _id: string; title: string }[]>([]);
+  const queryClient = useQueryClient();
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [loadingMessages, setLoadingMessages] = useState(false);
-  const [sending, setSending] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [streamingText, setStreamingText] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
-  useEffect(() => {
-    chatApi.getConversations().then(setConversations).catch(console.error);
-  }, []);
+  // ── Conversations ──────────────────────────────────────────────
+  const { data: conversations = [] } = useQuery<Conversation[]>({
+    queryKey: ['conversations'],
+    queryFn: chatApi.getConversations,
+  });
 
-  useEffect(() => {
-    if (!activeId) {
-      setMessages([]);
-      return;
-    }
-    setLoadingMessages(true);
-    chatApi
-      .getMessages(activeId)
-      .then(setMessages)
-      .catch(console.error)
-      .finally(() => setLoadingMessages(false));
-  }, [activeId]);
+  const createMutation = useMutation({
+    mutationFn: (title?: string) => chatApi.createConversation(title),
+    onSuccess: (conv) => {
+      queryClient.setQueryData<Conversation[]>(['conversations'], (prev = []) => [conv, ...prev]);
+    },
+  });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => chatApi.deleteConversation(id),
+    onSuccess: (_, id) => {
+      queryClient.setQueryData<Conversation[]>(['conversations'], (prev = []) =>
+        prev.filter((c) => c._id !== id),
+      );
+      if (activeId === id) setActiveId(null);
+    },
+  });
+
+  // ── Messages ───────────────────────────────────────────────────
+  const { data: messages = [], isLoading: loadingMessages } = useQuery<Message[]>({
+    queryKey: ['messages', activeId],
+    queryFn: () => chatApi.getMessages(activeId!),
+    enabled: !!activeId,
+  });
+
+  // ── Handlers ───────────────────────────────────────────────────
   const handleCreate = useCallback(async () => {
-    try {
-      const conv = await chatApi.createConversation();
-      setConversations((prev) => [conv, ...prev]);
-      setActiveId(conv._id);
-    } catch (err) {
-      console.error(err);
-    }
-  }, []);
+    const conv = await createMutation.mutateAsync(undefined);
+    setActiveId(conv._id);
+  }, [createMutation]);
 
   const handleSend = useCallback(
     async (content: string) => {
-      if (!activeId) return;
-      setSending(true);
-      let fileUrl: string | undefined;
-      let fileName: string | undefined;
+      if (!activeId || isSending) return;
+      setIsSending(true);
+      setStreamingText('');
+
       try {
+        let fileUrl: string | undefined;
+        let fileName: string | undefined;
         if (pendingFile) {
           const uploaded = await chatApi.uploadFile(pendingFile);
           fileUrl = uploaded.fileUrl;
           fileName = uploaded.fileName;
           setPendingFile(null);
         }
-        const newMessages = await chatApi.sendMessage(activeId, content, fileUrl, fileName);
-        setMessages((prev) => [...prev, ...newMessages]);
-        setConversations((prev) =>
-          prev.map((c) =>
-            c._id === activeId
-              ? { ...c, title: newMessages[0]?.content?.slice(0, 50) || c.title }
-              : c,
-          ),
-        );
+
+        // Optimistic user message
+        const tempId = `temp-${Date.now()}`;
+        const optimisticUser: Message = {
+          _id: tempId,
+          conversationId: activeId,
+          role: 'user',
+          content,
+          fileUrl,
+          fileName,
+          createdAt: new Date().toISOString(),
+        };
+        queryClient.setQueryData<Message[]>(['messages', activeId], (prev = []) => [
+          ...prev,
+          optimisticUser,
+        ]);
+
+        let fullText = '';
+        for await (const event of chatApi.streamMessage(activeId, content, fileUrl, fileName)) {
+          if (event.type === 'chunk') {
+            fullText += event.text;
+            setStreamingText(fullText);
+          } else if (event.type === 'done') {
+            // Replace optimistic msg with real user msg + finalized AI msg
+            queryClient.setQueryData<Message[]>(['messages', activeId], (prev = []) => [
+              ...prev.filter((m) => m._id !== tempId),
+              // user_message event already persisted; just add AI message
+              event.message,
+            ]);
+            // Refresh conversations to get updated title/timestamp
+            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+            setStreamingText('');
+          } else if (event.type === 'user_message') {
+            // Replace optimistic with server-confirmed user message
+            queryClient.setQueryData<Message[]>(['messages', activeId], (prev = []) =>
+              prev.map((m) => (m._id === tempId ? event.message : m)),
+            );
+          }
+        }
       } catch (err) {
         console.error(err);
+        setStreamingText('');
       } finally {
-        setSending(false);
+        setIsSending(false);
       }
     },
-    [activeId, pendingFile],
+    [activeId, isSending, pendingFile, queryClient],
   );
 
-  // Start a brand-new conversation then send the first message
-  const handleHomePageSend = useCallback(async (content: string, file?: File) => {
-    setSending(true);
-    try {
-      const conv = await chatApi.createConversation(content.slice(0, 50));
-      setConversations((prev) => [conv, ...prev]);
-      setActiveId(conv._id);
+  const handleHomePageSend = useCallback(
+    async (content: string, file?: File) => {
+      if (isSending) return;
+      setIsSending(true);
+      setStreamingText('');
 
-      let fileUrl: string | undefined;
-      let fileName: string | undefined;
-      if (file) {
-        const uploaded = await chatApi.uploadFile(file);
-        fileUrl = uploaded.fileUrl;
-        fileName = uploaded.fileName;
+      try {
+        const conv = await chatApi.createConversation(content.slice(0, 50));
+        queryClient.setQueryData<Conversation[]>(['conversations'], (prev = []) => [conv, ...prev]);
+        setActiveId(conv._id);
+
+        let fileUrl: string | undefined;
+        let fileName: string | undefined;
+        if (file) {
+          const uploaded = await chatApi.uploadFile(file);
+          fileUrl = uploaded.fileUrl;
+          fileName = uploaded.fileName;
+        }
+
+        const newMessages: Message[] = [];
+        let fullText = '';
+
+        for await (const event of chatApi.streamMessage(conv._id, content, fileUrl, fileName)) {
+          if (event.type === 'user_message') {
+            newMessages[0] = event.message;
+            queryClient.setQueryData<Message[]>(['messages', conv._id], [event.message]);
+          } else if (event.type === 'chunk') {
+            fullText += event.text;
+            setStreamingText(fullText);
+          } else if (event.type === 'done') {
+            queryClient.setQueryData<Message[]>(['messages', conv._id], [
+              ...(newMessages[0] ? [newMessages[0]] : []),
+              event.message,
+            ]);
+            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+            setStreamingText('');
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        setStreamingText('');
+      } finally {
+        setIsSending(false);
       }
-      const newMessages = await chatApi.sendMessage(conv._id, content, fileUrl, fileName);
-      setMessages(newMessages);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setSending(false);
-    }
-  }, []);
+    },
+    [isSending, queryClient],
+  );
 
   return {
     conversations,
@@ -99,11 +165,13 @@ export function useChat() {
     setActiveId,
     messages,
     loadingMessages,
-    sending,
+    sending: isSending,
+    streamingText,
     pendingFile,
     setPendingFile,
     handleCreate,
     handleSend,
     handleHomePageSend,
+    handleDelete: (id: string) => deleteMutation.mutate(id),
   };
 }
