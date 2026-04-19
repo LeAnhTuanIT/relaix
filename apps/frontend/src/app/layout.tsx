@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Relaix",
-  description: "Monorepo with NestJS and Next.js",
+  title: "AI Chat",
+  description: "AI Chat application built with NestJS and Next.js",
 };
 
 export default function RootLayout({
