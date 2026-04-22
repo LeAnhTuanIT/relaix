@@ -12,4 +12,8 @@ export class SendMessageDto {
   @IsOptional()
   @IsString()
   fileName?: string;
+
+  @IsOptional()
+  @IsString()
+  model?: string;
 }

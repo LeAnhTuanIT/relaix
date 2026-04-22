@@ -1,26 +1,107 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { createAnthropic } from '@ai-sdk/anthropic';
+import { google } from '@ai-sdk/google';
 import { generateText, streamText } from 'ai';
-import { AiProviderPort } from '../../domain/ports/ai-provider.port';
-
-// Routes through Vercel AI Gateway — requires AI_GATEWAY_API_KEY or VERCEL_OIDC_TOKEN
-// Swap model string to change provider: 'anthropic/claude-sonnet-4.6', 'google/gemini-3-flash', etc.
-const MODEL = 'openai/gpt-5.4';
+import { AiProviderPort, AiAttachment } from '../../domain/ports/ai-provider.port';
+import axios from 'axios';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const pdfParse = require('pdf-parse');
 
 @Injectable()
 export class VercelAiAdapter extends AiProviderPort {
-  async generateResponse(userContent: string): Promise<string> {
+  private readonly anthropic;
+
+  constructor(private readonly configService: ConfigService) {
+    super();
+    this.anthropic = createAnthropic({
+      apiKey: this.configService.get<string>('ANTHROPIC_API_KEY'),
+    });
+  }
+
+  private getModel(modelId?: string) {
+    // Map friendly IDs to actual model identifiers
+    if (modelId === 'claude-sonnet-4.6') {
+      return this.anthropic('claude-3-5-sonnet-20241022');
+    }
+    if (modelId === 'gemini-2.0-flash') {
+      return google('gemini-2.0-flash-exp');
+    }
+
+    // Fallback logic
+    if (modelId?.includes('claude')) {
+      return this.anthropic('claude-3-5-sonnet-20241022');
+    }
+    if (modelId?.includes('gemini')) {
+      return google('gemini-2.0-flash-exp');
+    }
+    
+    return this.anthropic('claude-3-5-sonnet-20241022');
+  }
+
+  private async getFileContext(attachment?: AiAttachment): Promise<{ 
+    experimental_attachments?: any[], 
+    supplementaryText?: string 
+  }> {
+    if (!attachment || !attachment.url) return {};
+
+    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(attachment.url);
+    const isPdf = /\.pdf$/i.test(attachment.url);
+
+    if (isImage) {
+      return {
+        experimental_attachments: [{
+          url: attachment.url,
+          name: attachment.name,
+          contentType: `image/${attachment.url.split('.').pop()}`
+        }]
+      };
+    }
+
+    if (isPdf) {
+      try {
+        const response = await axios.get(attachment.url, { responseType: 'arraybuffer' });
+        const data = await pdfParse(response.data);
+        return {
+          supplementaryText: `\n\n[Dữ liệu từ tệp đính kèm ${attachment.name || 'document.pdf'}]:\n${data.text}`
+        };
+      } catch (err) {
+        console.error('Lỗi khi đọc PDF:', err);
+        return { supplementaryText: `\n\n[Không thể đọc nội dung tệp ${attachment.name || 'document.pdf'}]` };
+      }
+    }
+
+    return {};
+  }
+
+  async generateResponse(userContent: string, attachment?: AiAttachment, modelId?: string): Promise<string> {
+    const { experimental_attachments, supplementaryText } = await this.getFileContext(attachment);
+    const model = this.getModel(modelId);
+    
     const { text } = await generateText({
-      model: MODEL,
-      messages: [{ role: 'user', content: userContent }],
+      model: model,
+      messages: [{ 
+        role: 'user', 
+        content: userContent + (supplementaryText || ''),
+        experimental_attachments
+      } as any],
     });
     return text;
   }
 
-  async *streamResponse(userContent: string): AsyncIterable<string> {
+  async *streamResponse(userContent: string, attachment?: AiAttachment, modelId?: string): AsyncIterable<string> {
+    const { experimental_attachments, supplementaryText } = await this.getFileContext(attachment);
+    const model = this.getModel(modelId);
+
     const result = streamText({
-      model: MODEL,
-      messages: [{ role: 'user', content: userContent }],
+      model: model,
+      messages: [{ 
+        role: 'user', 
+        content: userContent + (supplementaryText || ''),
+        experimental_attachments
+      } as any],
     });
+    
     for await (const chunk of result.textStream) {
       yield chunk;
     }

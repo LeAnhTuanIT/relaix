@@ -12,9 +12,8 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
-import { existsSync, mkdirSync } from 'fs';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import { Response } from 'express';
 import { CreateConversationUseCase } from '../application/use-cases/create-conversation.use-case';
 import { GetConversationsUseCase } from '../application/use-cases/get-conversations.use-case';
@@ -25,8 +24,7 @@ import { StreamMessageUseCase } from '../application/use-cases/stream-message.us
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { MessageEntity } from '../domain/entities/message.entity';
-
-const UPLOAD_DIR = join(process.cwd(), 'uploads');
+import { ConversationEntity } from '../domain/entities/conversation.entity';
 
 function toMessageDto(msg: MessageEntity) {
   return {
@@ -40,6 +38,15 @@ function toMessageDto(msg: MessageEntity) {
   };
 }
 
+function toConversationDto(conv: ConversationEntity) {
+  return {
+    _id: conv.id,
+    title: conv.title,
+    createdAt: conv.createdAt,
+    updatedAt: conv.updatedAt,
+  };
+}
+
 @Controller('chat')
 export class ChatController {
   constructor(
@@ -49,16 +56,25 @@ export class ChatController {
     private readonly getMessagesUseCase: GetMessagesUseCase,
     private readonly sendMessageUseCase: SendMessageUseCase,
     private readonly streamMessageUseCase: StreamMessageUseCase,
-  ) {}
+  ) {
+    // Configure Cloudinary
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+  }
 
   @Post('conversations')
-  createConversation(@Body() dto: CreateConversationDto) {
-    return this.createConversationUseCase.execute(dto);
+  async createConversation(@Body() dto: CreateConversationDto) {
+    const conv = await this.createConversationUseCase.execute(dto);
+    return toConversationDto(conv);
   }
 
   @Get('conversations')
-  getConversations() {
-    return this.getConversationsUseCase.execute();
+  async getConversations() {
+    const convs = await this.getConversationsUseCase.execute();
+    return convs.map(toConversationDto);
   }
 
   @Delete('conversations/:id')
@@ -68,13 +84,15 @@ export class ChatController {
   }
 
   @Get('conversations/:id/messages')
-  getMessages(@Param('id') id: string) {
-    return this.getMessagesUseCase.execute(id);
+  async getMessages(@Param('id') id: string) {
+    const messages = await this.getMessagesUseCase.execute(id);
+    return messages.map(toMessageDto);
   }
 
   @Post('conversations/:id/messages')
-  sendMessage(@Param('id') id: string, @Body() dto: SendMessageDto) {
-    return this.sendMessageUseCase.execute(id, dto);
+  async sendMessage(@Param('id') id: string, @Body() dto: SendMessageDto) {
+    const messages = await this.sendMessageUseCase.execute(id, dto);
+    return messages.map(toMessageDto);
   }
 
   @Post('conversations/:id/messages/stream')
@@ -102,10 +120,15 @@ export class ChatController {
         send({ type: 'chunk', text: chunk });
       }
 
+      if (!fullText.trim()) {
+        throw new Error('AI không trả về kết quả. Vui lòng kiểm tra API Key.');
+      }
+
       const aiMessage = await commit(fullText);
       send({ type: 'done', message: toMessageDto(aiMessage) });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Stream error';
+      console.error('Stream error:', err);
       send({ type: 'error', message });
     } finally {
       res.end();
@@ -116,24 +139,21 @@ export class ChatController {
   @UseInterceptors(
     FileInterceptor('file', {
       limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-      storage: diskStorage({
-        destination: (_req, _file, cb) => {
-          if (!existsSync(UPLOAD_DIR)) mkdirSync(UPLOAD_DIR, { recursive: true });
-          cb(null, UPLOAD_DIR);
-        },
-        filename: (_req, file, cb) => {
-          const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-          cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
-        },
+      storage: new CloudinaryStorage({
+        cloudinary: cloudinary,
+        params: {
+          folder: 'relaix-chat',
+          allowed_formats: ['jpg', 'png', 'jpeg', 'gif', 'webp', 'pdf', 'txt', 'docx'],
+          resource_type: 'auto',
+        } as any,
       }),
     }),
   )
-  uploadFile(@UploadedFile() file: Express.Multer.File) {
+  uploadFile(@UploadedFile() file: any) {
     if (!file) return { fileUrl: null, fileName: null };
 
-    const baseUrl = process.env.API_URL || `http://localhost:${process.env.PORT || 3001}`;
     return {
-      fileUrl: `${baseUrl}/uploads/${file.filename}`,
+      fileUrl: file.path || file.secure_url,
       fileName: file.originalname,
     };
   }

@@ -55,11 +55,12 @@ export const chatApi = {
     content: string,
     fileUrl?: string,
     fileName?: string,
+    model?: string,
   ): AsyncIterable<StreamEvent> {
     const res = await fetch(`${API_URL}/chat/conversations/${conversationId}/messages/stream`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content, fileUrl, fileName }),
+      body: JSON.stringify({ content, fileUrl, fileName, model }),
     });
 
     if (!res.ok || !res.body) throw new Error('Stream failed');

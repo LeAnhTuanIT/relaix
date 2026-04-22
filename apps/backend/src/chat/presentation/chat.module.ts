@@ -12,7 +12,7 @@ import { MessageRepository } from '../domain/repositories/message.repository';
 import { AiProviderPort } from '../domain/ports/ai-provider.port';
 import { MongoConversationRepository } from '../infrastructure/persistence/mongo-conversation.repository';
 import { MongoMessageRepository } from '../infrastructure/persistence/mongo-message.repository';
-import { AiMockAdapter } from '../infrastructure/ai/ai-mock.adapter';
+import { VercelAiAdapter } from '../infrastructure/ai/vercel-ai.adapter';
 import {
   Conversation,
   ConversationSchema,
@@ -36,7 +36,7 @@ import { Message, MessageSchema } from '../infrastructure/persistence/schemas/me
     StreamMessageUseCase,
     { provide: ConversationRepository, useClass: MongoConversationRepository },
     { provide: MessageRepository, useClass: MongoMessageRepository },
-    { provide: AiProviderPort, useClass: AiMockAdapter },
+    { provide: AiProviderPort, useClass: VercelAiAdapter },
   ],
 })
 export class ChatModule {}

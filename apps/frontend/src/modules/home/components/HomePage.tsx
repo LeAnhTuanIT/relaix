@@ -76,9 +76,11 @@ const SparkleIcon = () => (
 interface HomePageProps {
   onSend: (content: string, file?: File) => void;
   sending: boolean;
+  selectedModel: string;
+  onModelChange: (model: string) => void;
 }
 
-export function HomePage({ onSend, sending }: HomePageProps) {
+export function HomePage({ onSend, sending, selectedModel, onModelChange }: HomePageProps) {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [showChat, setShowChat] = useState(false);
 
@@ -114,7 +116,7 @@ export function HomePage({ onSend, sending }: HomePageProps) {
         </p>
 
         {/* Input */}
-        <div className="w-full max-w-2xl mt-8">
+        <div className="w-full max-w-3xl mt-8">
           <ChatInput
             onSend={(content) => onSend(content, pendingFile ?? undefined)}
             onFileSelect={setPendingFile}
@@ -122,6 +124,8 @@ export function HomePage({ onSend, sending }: HomePageProps) {
             pendingFile={pendingFile}
             onClearFile={() => setPendingFile(null)}
             appName="Enter text or voice to create..."
+            selectedModel={selectedModel}
+            onModelChange={onModelChange}
           />
         </div>
 

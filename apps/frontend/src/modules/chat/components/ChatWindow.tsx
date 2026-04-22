@@ -30,30 +30,35 @@ export function ChatWindow({ messages, loading, sending, streamingText }: ChatWi
 
   return (
     <ScrollArea className="flex-1">
-      <div className="max-w-2xl mx-auto px-4 py-8">
+      <div className="max-w-3xl mx-auto px-4 py-8">
         {messages.map((msg) => (
           <MessageBubble key={msg._id} message={msg} />
         ))}
 
         {streamingText && (
-          <div className="mb-6">
-            <p className="text-sm font-semibold text-gray-800 mb-2">AI Chat</p>
-            <p className="text-sm text-gray-700 whitespace-pre-wrap">{streamingText}</p>
-          </div>
+          <MessageBubble
+            message={{
+              _id: 'streaming',
+              conversationId: '',
+              role: 'assistant',
+              content: streamingText,
+              createdAt: new Date().toISOString(),
+            }}
+            isStreaming={true}
+          />
         )}
 
         {sending && !streamingText && (
-          <div className="mb-6">
-            <p className="text-sm font-semibold text-gray-800 mb-2">AI Chat</p>
+          <div className="mb-8 group pl-8">
             <div className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" />
+              <span className="w-1.5 h-1.5 bg-[#c96442] rounded-full animate-bounce [animation-delay:-0.3s]" />
+              <span className="w-1.5 h-1.5 bg-[#c96442] rounded-full animate-bounce [animation-delay:-0.15s]" />
+              <span className="w-1.5 h-1.5 bg-[#c96442] rounded-full animate-bounce" />
             </div>
           </div>
         )}
 
-        <div ref={bottomRef} />
+        <div ref={bottomRef} className="h-4" />
       </div>
     </ScrollArea>
   );

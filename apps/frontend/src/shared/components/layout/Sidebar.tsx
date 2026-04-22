@@ -6,7 +6,7 @@ import {
   FileText,
   Palette,
   MonitorPlay,
-  Image,
+  Image as ImageIcon,
   Video,
   MoreHorizontal,
   LayoutGrid,
@@ -27,7 +27,7 @@ const topNav: NavItem[] = [
   { icon: <FileText size={20} />, label: 'Document' },
   { icon: <Palette size={20} />, label: 'Design' },
   { icon: <MonitorPlay size={20} />, label: 'Presentation' },
-  { icon: <Image size={20} />, label: 'Image' },
+  { icon: <ImageIcon size={20} />, label: 'Image' },
   { icon: <Video size={20} />, label: 'Video' },
   { icon: <MoreHorizontal size={20} />, label: 'More' },
 ];

@@ -8,6 +8,7 @@ export class StreamMessageDto {
   content: string;
   fileUrl?: string;
   fileName?: string;
+  model?: string;
 }
 
 @Injectable()
@@ -34,7 +35,11 @@ export class StreamMessageUseCase {
       fileName: dto.fileName,
     });
 
-    const textStream = this.aiProvider.streamResponse(dto.content);
+    const textStream = this.aiProvider.streamResponse(
+      dto.content,
+      userMessage.fileUrl ? { url: userMessage.fileUrl, name: userMessage.fileName } : undefined,
+      dto.model,
+    );
 
     const commit = async (fullText: string): Promise<MessageEntity> => {
       const aiMessage = await this.messageRepo.create({

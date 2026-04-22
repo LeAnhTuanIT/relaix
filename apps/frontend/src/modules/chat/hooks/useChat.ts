@@ -10,6 +10,7 @@ export function useChat() {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [streamingText, setStreamingText] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [selectedModel, setSelectedModel] = useState('claude-sonnet-4.6');
 
   // ── Conversations ──────────────────────────────────────────────
   const { data: conversations = [] } = useQuery<Conversation[]>({
@@ -80,25 +81,34 @@ export function useChat() {
         ]);
 
         let fullText = '';
-        for await (const event of chatApi.streamMessage(activeId, content, fileUrl, fileName)) {
+        for await (const event of chatApi.streamMessage(activeId, content, fileUrl, fileName, selectedModel)) {
           if (event.type === 'chunk') {
             fullText += event.text;
             setStreamingText(fullText);
           } else if (event.type === 'done') {
-            // Replace optimistic msg with real user msg + finalized AI msg
             queryClient.setQueryData<Message[]>(['messages', activeId], (prev = []) => [
-              ...prev.filter((m) => m._id !== tempId),
-              // user_message event already persisted; just add AI message
+              ...prev.filter((m) => m._id !== tempId && m._id !== 'error'),
               event.message,
             ]);
-            // Refresh conversations to get updated title/timestamp
             queryClient.invalidateQueries({ queryKey: ['conversations'] });
             setStreamingText('');
           } else if (event.type === 'user_message') {
-            // Replace optimistic with server-confirmed user message
             queryClient.setQueryData<Message[]>(['messages', activeId], (prev = []) =>
               prev.map((m) => (m._id === tempId ? event.message : m)),
             );
+          } else if (event.type === 'error') {
+            const errorMessage: Message = {
+              _id: 'error',
+              conversationId: activeId,
+              role: 'assistant',
+              content: `Error: ${event.message}`,
+              createdAt: new Date().toISOString(),
+            };
+            queryClient.setQueryData<Message[]>(['messages', activeId], (prev = []) => [
+              ...prev.filter((m) => m._id !== tempId),
+              errorMessage,
+            ]);
+            setStreamingText('');
           }
         }
       } catch (err) {
@@ -108,7 +118,7 @@ export function useChat() {
         setIsSending(false);
       }
     },
-    [activeId, isSending, pendingFile, queryClient],
+    [activeId, isSending, pendingFile, queryClient, selectedModel],
   );
 
   const handleHomePageSend = useCallback(
@@ -133,7 +143,7 @@ export function useChat() {
         const newMessages: Message[] = [];
         let fullText = '';
 
-        for await (const event of chatApi.streamMessage(conv._id, content, fileUrl, fileName)) {
+        for await (const event of chatApi.streamMessage(conv._id, content, fileUrl, fileName, selectedModel)) {
           if (event.type === 'user_message') {
             newMessages[0] = event.message;
             queryClient.setQueryData<Message[]>(['messages', conv._id], [event.message]);
@@ -156,7 +166,7 @@ export function useChat() {
         setIsSending(false);
       }
     },
-    [isSending, queryClient],
+    [isSending, queryClient, selectedModel],
   );
 
   return {
@@ -173,5 +183,7 @@ export function useChat() {
     handleSend,
     handleHomePageSend,
     handleDelete: (id: string) => deleteMutation.mutate(id),
+    selectedModel,
+    setSelectedModel,
   };
 }

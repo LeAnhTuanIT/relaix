@@ -22,6 +22,8 @@ export default function ChatPage() {
     handleCreate,
     handleSend,
     handleHomePageSend,
+    selectedModel,
+    setSelectedModel,
   } = useChat();
 
   return (
@@ -61,11 +63,18 @@ export default function ChatPage() {
                 pendingFile={pendingFile}
                 onClearFile={() => setPendingFile(null)}
                 appName={APP_NAME}
+                selectedModel={selectedModel}
+                onModelChange={setSelectedModel}
               />
             </div>
           </>
         ) : (
-          <HomePage onSend={handleHomePageSend} sending={sending} />
+          <HomePage 
+            onSend={handleHomePageSend} 
+            sending={sending} 
+            selectedModel={selectedModel}
+            onModelChange={setSelectedModel}
+          />
         )}
       </main>
     </div>

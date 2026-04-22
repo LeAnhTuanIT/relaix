@@ -8,6 +8,7 @@ export class SendMessageDto {
   content: string;
   fileUrl?: string;
   fileName?: string;
+  model?: string;
 }
 
 @Injectable()
@@ -30,7 +31,11 @@ export class SendMessageUseCase {
       fileName: dto.fileName,
     });
 
-    const aiContent = await this.aiProvider.generateResponse(dto.content);
+    const aiContent = await this.aiProvider.generateResponse(
+      dto.content,
+      userMessage.fileUrl ? { url: userMessage.fileUrl, name: userMessage.fileName } : undefined,
+      dto.model,
+    );
     const aiMessage = await this.messageRepo.create({
       conversationId,
       role: 'assistant',
