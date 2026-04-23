@@ -20,23 +20,15 @@ export class VercelAiAdapter extends AiProviderPort {
   }
 
   private getModel(modelId?: string) {
-    // Map friendly IDs to actual model identifiers
-    if (modelId === 'claude-sonnet-4.6') {
-      return this.anthropic('claude-3-5-sonnet-20241022');
+    // Map friendly IDs to actual model identifiers from the provided image
+    if (modelId === 'claude-sonnet-4.6' || modelId?.includes('claude')) {
+      return this.anthropic('claude-sonnet-4-20250514');
     }
-    if (modelId === 'gemini-2.0-flash') {
-      return google('gemini-2.0-flash-exp');
-    }
-
-    // Fallback logic
-    if (modelId?.includes('claude')) {
-      return this.anthropic('claude-3-5-sonnet-20241022');
-    }
-    if (modelId?.includes('gemini')) {
-      return google('gemini-2.0-flash-exp');
+    if (modelId === 'gemini-2.0-flash' || modelId?.includes('gemini')) {
+      return google('gemini-2.0-flash-lite-preview-02-05');
     }
     
-    return this.anthropic('claude-3-5-sonnet-20241022');
+    return this.anthropic('claude-sonnet-4-20250514');
   }
 
   private async getFileContext(attachment?: AiAttachment): Promise<{ 

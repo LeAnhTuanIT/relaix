@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, X, MessageCircle, LineChart } from 'lucide-react';
+import { X, MessageCircle, LineChart } from 'lucide-react';
 import { ChatInput } from '@/modules/chat/components/ChatInput';
 
 const CATEGORIES = [
@@ -51,25 +51,6 @@ export function HomePage({ onSend, sending, selectedModel, onModelChange }: Home
 
   return (
     <div className="flex-1 flex flex-col h-full bg-white relative overflow-y-auto overflow-x-hidden custom-scrollbar">
-      {/* Top navbar */}
-      <header className="flex items-center justify-between px-10 py-5 flex-shrink-0 sticky top-0 bg-white/80 backdrop-blur-md z-30">
-        <div className="flex items-center gap-1">
-          <span className="font-black text-blue-600 text-xl tracking-tighter">TEMPLATE</span>
-          <span className="font-medium text-gray-400 text-xl tracking-tighter">.NET</span>
-        </div>
-        <div className="flex items-center gap-6">
-          <button className="text-gray-500 hover:text-gray-800 transition-colors">
-            <Search size={22} />
-          </button>
-          <button className="text-[15px] text-gray-600 hover:text-gray-900 font-bold transition-colors">
-            Pricing
-          </button>
-          <button className="text-[15px] font-bold text-gray-800 border border-gray-200 rounded-xl px-5 py-2 hover:bg-gray-50 transition-colors shadow-sm">
-            Sign up
-          </button>
-        </div>
-      </header>
-
       {/* Hero Content */}
       <div className="flex-1 flex flex-col items-center">
         <section className="flex flex-col items-center text-center px-6 pt-16 pb-8 flex-shrink-0 w-full">
@@ -81,7 +62,7 @@ export function HomePage({ onSend, sending, selectedModel, onModelChange }: Home
             assets in an all in one ai powered editor. Editable outputs with native exports.
           </p>
 
-          {/* Input Area - Essential to have no overflow here */}
+          {/* Input Area */}
           <div className="w-full max-w-3xl mt-12 mb-6 relative z-40">
             <ChatInput
               onSend={(content) => onSend(content, pendingFile ?? undefined)}
@@ -92,6 +73,7 @@ export function HomePage({ onSend, sending, selectedModel, onModelChange }: Home
               appName="Enter text or voice to design a logo for a sustainable fashion startup named EcoWeave, featuring"
               selectedModel={selectedModel}
               onModelChange={onModelChange}
+              menuDirection="down"
             />
           </div>
 

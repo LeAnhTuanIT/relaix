@@ -126,10 +126,11 @@ export class ChatController {
 
       const aiMessage = await commit(fullText);
       send({ type: 'done', message: toMessageDto(aiMessage) });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Stream error';
+    } catch (err: any) {
       console.error('Stream error:', err);
-      send({ type: 'error', message });
+      // Try to extract a more helpful message from Vercel AI SDK error
+      const message = err.message || (err.data && err.data.error && err.data.error.message) || 'AI Provider Error';
+      send({ type: 'error', message: `AI Error: ${message}` });
     } finally {
       res.end();
     }

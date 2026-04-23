@@ -1,19 +1,16 @@
-'use client';
+"use client";
 
-import { cn } from '@/shared/lib/utils';
-import { type Message } from '@/shared/api/chat.api';
-import { FilePreview } from './FilePreview';
-import { Search, FileText, Palette, LineChart, Presentation, Brain } from 'lucide-react';
+import { type Message } from "@/shared/api/chat.api";
+import { FilePreview } from "./FilePreview";
+import { Search, FileText, Palette, LineChart, Presentation, Brain } from "lucide-react";
 
 interface MessageBubbleProps {
   message: Message;
   isStreaming?: boolean;
 }
 
-const ASSISTANT_NAME = 'Template.net';
-
 export function MessageBubble({ message, isStreaming }: MessageBubbleProps) {
-  const isUser = message.role === 'user';
+  const isUser = message.role === "user";
 
   if (isUser) {
     return (
@@ -35,7 +32,7 @@ export function MessageBubble({ message, isStreaming }: MessageBubbleProps) {
   return (
     <div className="mb-12 group max-w-4xl">
       <div className="flex items-center gap-2 mb-4">
-        <p className="text-[15px] font-black text-gray-900 tracking-tight">{ASSISTANT_NAME}</p>
+        {/* <p className="text-[15px] font-black text-gray-900 tracking-tight">{ASSISTANT_NAME}</p> */}
       </div>
       <div className="text-[16px] text-[#374151] leading-[1.8] font-medium">
         <FormattedContent content={message.content} isStreaming={isStreaming} />
@@ -45,34 +42,49 @@ export function MessageBubble({ message, isStreaming }: MessageBubbleProps) {
 }
 
 function FormattedContent({ content, isStreaming }: { content: string; isStreaming?: boolean }) {
-  const lines = content.split('\n');
-  
+  const lines = content.split("\n");
+
   return (
     <div className="space-y-4">
       {lines.map((line, i) => {
         const trimmed = line.trim();
-        
+
         // Handle headers
-        if (trimmed.startsWith('### ')) {
-          return <h3 key={i} className="text-lg font-black text-gray-900 mt-6 mb-2">{renderBold(trimmed.slice(4))}</h3>;
+        if (trimmed.startsWith("### ")) {
+          return (
+            <h3 key={i} className="text-lg font-black text-gray-900 mt-6 mb-2">
+              {renderBold(trimmed.slice(4))}
+            </h3>
+          );
         }
-        if (trimmed.startsWith('## ')) {
-          return <h2 key={i} className="text-xl font-black text-gray-900 mt-8 mb-4">{renderBold(trimmed.slice(3))}</h2>;
+        if (trimmed.startsWith("## ")) {
+          return (
+            <h2 key={i} className="text-xl font-black text-gray-900 mt-8 mb-4">
+              {renderBold(trimmed.slice(3))}
+            </h2>
+          );
         }
 
         // Handle lists with specific icons like the image
-        const isBullet = trimmed.startsWith('- ') || trimmed.startsWith('• ') || trimmed.startsWith('* ');
+        const isBullet =
+          trimmed.startsWith("- ") || trimmed.startsWith("• ") || trimmed.startsWith("* ");
         if (isBullet) {
           const bulletContent = trimmed.slice(2);
           const lowerContent = bulletContent.toLowerCase();
-          
+
           let icon = <Search size={16} className="text-gray-400" />;
-          if (lowerContent.includes('document')) icon = <FileText size={16} className="text-gray-400" />;
-          if (lowerContent.includes('design')) icon = <Palette size={16} className="text-gray-400" />;
-          if (lowerContent.includes('data analysis')) icon = <LineChart size={16} className="text-gray-400" />;
-          if (lowerContent.includes('presentation')) icon = <Presentation size={16} className="text-gray-400" />;
-          if (lowerContent.includes('research')) icon = <Search size={16} className="text-gray-400" />;
-          if (i === lines.length - 1 && isStreaming) icon = <Brain size={16} className="text-blue-400 animate-pulse" />;
+          if (lowerContent.includes("document"))
+            icon = <FileText size={16} className="text-gray-400" />;
+          if (lowerContent.includes("design"))
+            icon = <Palette size={16} className="text-gray-400" />;
+          if (lowerContent.includes("data analysis"))
+            icon = <LineChart size={16} className="text-gray-400" />;
+          if (lowerContent.includes("presentation"))
+            icon = <Presentation size={16} className="text-gray-400" />;
+          if (lowerContent.includes("research"))
+            icon = <Search size={16} className="text-gray-400" />;
+          if (i === lines.length - 1 && isStreaming)
+            icon = <Brain size={16} className="text-blue-400 animate-pulse" />;
 
           return (
             <div key={i} className="flex gap-3 ml-1 items-start py-1">
@@ -102,8 +114,12 @@ function FormattedContent({ content, isStreaming }: { content: string; isStreami
 function renderBold(text: string) {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
   return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={i} className="font-black text-gray-900">{part.slice(2, -2)}</strong>;
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={i} className="font-black text-gray-900">
+          {part.slice(2, -2)}
+        </strong>
+      );
     }
     return part;
   });
