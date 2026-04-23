@@ -18,7 +18,7 @@ import { LocalAuthGuard } from '../infrastructure/guards/local-auth.guard';
 import { JwtAuthGuard } from '../infrastructure/guards/jwt-auth.guard';
 import { GoogleAuthGuard } from '../infrastructure/guards/google-auth.guard';
 import { RegisterDto } from './dto/auth.dto';
-import { User } from '@relaix/shared';
+import { UserEntity } from '../../user/domain/entities/user.entity';
 
 @Controller('auth')
 export class AuthController {
@@ -41,7 +41,7 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const user = req.user as unknown as User;
+    const user = req.user as UserEntity;
     const token = await this.authService.generateToken(user);
     this.setCookie(res, token);
     return user;
@@ -56,7 +56,7 @@ export class AuthController {
   @UseGuards(GoogleAuthGuard)
   @Get('google/callback')
   async googleAuthCallback(@Req() req: Request, @Res() res: Response) {
-    const user = req.user as unknown as User;
+    const user = req.user as UserEntity;
     const token = await this.authService.generateToken(user);
     this.setCookie(res, token);
     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
