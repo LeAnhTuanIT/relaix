@@ -16,6 +16,7 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 import { type User } from '@relaix/shared';
+import Link from 'next/link';
 
 interface SidebarProps {
   user?: User | null;
@@ -89,10 +90,13 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
             <span className="text-[11px] font-bold leading-none tracking-tight">Sign out</span>
           </button>
         ) : (
-          <button className="flex flex-col items-center gap-1.5 py-3 px-1 w-full rounded-2xl transition-all text-gray-500 hover:text-gray-900 hover:bg-gray-50">
-            <UserIcon size={22} />
-            <span className="text-[11px] font-bold leading-none tracking-tight">Account</span>
-          </button>
+          <Link 
+            href="/login"
+            className="flex flex-col items-center gap-1.5 py-3 px-1 w-full rounded-2xl transition-all text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+          >
+            <LogIn size={22} />
+            <span className="text-[11px] font-bold leading-none tracking-tight">Sign in</span>
+          </Link>
         )}
 
         <button className="flex flex-col items-center gap-1.5 py-4 px-1 w-full rounded-[24px] bg-blue-600 text-white hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all transform active:scale-95 group">

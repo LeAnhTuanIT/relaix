@@ -135,17 +135,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               Pricing
             </Link>
             {user ? (
-              <div className="flex items-center gap-3">
+              <div className="group relative">
                 <img 
                   src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`} 
                   alt={user.name}
-                  className="w-9 h-9 rounded-full border border-gray-100 shadow-sm object-cover"
+                  className="w-9 h-9 rounded-full border border-gray-100 shadow-sm object-cover cursor-pointer hover:border-blue-400 transition-all"
                 />
               </div>
             ) : (
-              <Link href="/signup" className="text-[15px] font-bold text-gray-800 border border-gray-200 rounded-xl px-5 py-2 hover:bg-gray-50 transition-colors shadow-sm">
-                Sign up
-              </Link>
+              <div className="flex items-center gap-4">
+                <Link href="/login" className="text-[15px] text-gray-600 hover:text-gray-900 font-bold transition-colors">
+                  Log in
+                </Link>
+                <Link href="/register" className="text-[15px] font-bold text-white bg-blue-600 rounded-xl px-5 py-2 hover:bg-blue-700 transition-all shadow-md shadow-blue-100">
+                  Sign up
+                </Link>
+              </div>
             )}
           </div>
         </header>
