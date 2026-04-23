@@ -11,9 +11,16 @@ import {
   MoreHorizontal,
   Layout,
   Folder,
-  LogIn,
+  LogOut,
   Crown,
+  User as UserIcon,
 } from 'lucide-react';
+import { type User } from '@relaix/shared';
+
+interface SidebarProps {
+  user?: User | null;
+  onLogout?: () => void;
+}
 
 interface NavItem {
   icon: React.ReactNode;
@@ -59,7 +66,7 @@ function NavButton({ item }: { item: NavItem }) {
   );
 }
 
-export function Sidebar() {
+export function Sidebar({ user, onLogout }: SidebarProps) {
   return (
     <aside className="flex-shrink-0 w-[80px] flex flex-col items-center border-r border-gray-100 bg-white h-full py-6 z-20 overflow-y-auto no-scrollbar">
       {/* Main nav items */}
@@ -73,10 +80,20 @@ export function Sidebar() {
 
       {/* Bottom section */}
       <div className="flex flex-col gap-2 w-full px-2 mt-6">
-        <button className="flex flex-col items-center gap-1.5 py-3 px-1 w-full rounded-2xl transition-all text-gray-500 hover:text-gray-900 hover:bg-gray-50">
-          <LogIn size={22} />
-          <span className="text-[11px] font-bold leading-none tracking-tight">Sign in</span>
-        </button>
+        {user ? (
+          <button 
+            onClick={onLogout}
+            className="flex flex-col items-center gap-1.5 py-3 px-1 w-full rounded-2xl transition-all text-red-400 hover:text-red-600 hover:bg-red-50"
+          >
+            <LogOut size={22} />
+            <span className="text-[11px] font-bold leading-none tracking-tight">Sign out</span>
+          </button>
+        ) : (
+          <button className="flex flex-col items-center gap-1.5 py-3 px-1 w-full rounded-2xl transition-all text-gray-500 hover:text-gray-900 hover:bg-gray-50">
+            <UserIcon size={22} />
+            <span className="text-[11px] font-bold leading-none tracking-tight">Account</span>
+          </button>
+        )}
 
         <button className="flex flex-col items-center gap-1.5 py-4 px-1 w-full rounded-[24px] bg-blue-600 text-white hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all transform active:scale-95 group">
           <Crown size={24} fill="white" className="group-hover:rotate-12 transition-transform" />

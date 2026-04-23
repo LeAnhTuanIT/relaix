@@ -1,3 +1,5 @@
+import { type User } from '@relaix/shared';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export interface Message {
@@ -24,30 +26,39 @@ export type StreamEvent =
   | { type: 'error'; message: string };
 
 export const chatApi = {
-  async getConversations(): Promise<Conversation[]> {
-    const res = await fetch(`${API_URL}/chat/conversations`);
+  getConversations: async (): Promise<Conversation[]> => {
+    const res = await fetch(`${API_URL}/chat/conversations`, {
+      credentials: 'include',
+    });
     if (!res.ok) throw new Error('Failed to fetch conversations');
     return res.json();
   },
 
-  async createConversation(title?: string): Promise<Conversation> {
+  getMessages: async (conversationId: string): Promise<Message[]> => {
+    const res = await fetch(`${API_URL}/chat/conversations/${conversationId}/messages`, {
+      credentials: 'include',
+    });
+    if (!res.ok) throw new Error('Failed to fetch messages');
+    return res.json();
+  },
+
+  createConversation: async (title?: string): Promise<Conversation> => {
     const res = await fetch(`${API_URL}/chat/conversations`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title }),
+      credentials: 'include',
     });
     if (!res.ok) throw new Error('Failed to create conversation');
     return res.json();
   },
 
-  async deleteConversation(id: string): Promise<void> {
-    await fetch(`${API_URL}/chat/conversations/${id}`, { method: 'DELETE' });
-  },
-
-  async getMessages(conversationId: string): Promise<Message[]> {
-    const res = await fetch(`${API_URL}/chat/conversations/${conversationId}/messages`);
-    if (!res.ok) throw new Error('Failed to fetch messages');
-    return res.json();
+  deleteConversation: async (id: string): Promise<void> => {
+    const res = await fetch(`${API_URL}/chat/conversations/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    if (!res.ok) throw new Error('Failed to delete conversation');
   },
 
   async *streamMessage(
@@ -61,6 +72,7 @@ export const chatApi = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content, fileUrl, fileName, model }),
+      credentials: 'include',
     });
 
     if (!res.ok || !res.body) throw new Error('Stream failed');
@@ -74,23 +86,77 @@ export const chatApi = {
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
-      const parts = buffer.split('\n\n');
-      buffer = parts.pop() ?? '';
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
 
-      for (const part of parts) {
-        const line = part.trim();
+      for (const line of lines) {
         if (line.startsWith('data: ')) {
-          yield JSON.parse(line.slice(6)) as StreamEvent;
+          try {
+            yield JSON.parse(line.slice(6));
+          } catch (e) {
+            console.error('Failed to parse SSE line', line, e);
+          }
         }
       }
     }
   },
 
-  async uploadFile(file: File): Promise<{ fileUrl: string; fileName: string }> {
+  uploadFile: async (file: File): Promise<{ fileUrl: string; fileName: string }> => {
     const form = new FormData();
     form.append('file', file);
-    const res = await fetch(`${API_URL}/chat/upload`, { method: 'POST', body: form });
+    const res = await fetch(`${API_URL}/chat/upload`, {
+      method: 'POST',
+      body: form,
+      credentials: 'include',
+    });
     if (!res.ok) throw new Error('Failed to upload file');
     return res.json();
   },
+};
+
+export const authApi = {
+  register: async (data: any): Promise<User> => {
+    const res = await fetch(`${API_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || 'Registration failed');
+    }
+    return res.json();
+  },
+
+  login: async (data: any): Promise<User> => {
+    const res = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || 'Login failed');
+    }
+    return res.json();
+  },
+
+  logout: async (): Promise<void> => {
+    await fetch(`${API_URL}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+  },
+
+  getMe: async (): Promise<User> => {
+    const res = await fetch(`${API_URL}/auth/me`, {
+      credentials: 'include',
+    });
+    if (!res.ok) throw new Error('Not authenticated');
+    return res.json();
+  },
+
+  getGoogleAuthUrl: () => `${API_URL}/auth/google`,
 };

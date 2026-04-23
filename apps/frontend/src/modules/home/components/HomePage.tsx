@@ -4,15 +4,17 @@ import { useState } from 'react';
 import { X, MessageCircle, LineChart } from 'lucide-react';
 import { ChatInput } from '@/modules/chat/components/ChatInput';
 
+import Link from 'next/link';
+
 const CATEGORIES = [
-  { label: 'Document', icon: '📄' },
-  { label: 'Design', icon: '🎨' },
-  { label: 'Presentation', icon: '📊' },
-  { label: 'Image', icon: '🖼️' },
-  { label: 'Video', icon: '🎬' },
-  { label: 'Whiteboard', icon: '📋' },
-  { label: 'Social', icon: '💬' },
-  { label: 'Chart', icon: '📈' },
+  { label: 'Document', icon: '📄', href: '/document' },
+  { label: 'Design', icon: '🎨', href: '/design' },
+  { label: 'Presentation', icon: '📊', href: '/presentation' },
+  { label: 'Image', icon: '🖼️', href: '/image' },
+  { label: 'Video', icon: '🎬', href: '/video' },
+  { label: 'Whiteboard', icon: '📋', href: '/more' },
+  { label: 'Social', icon: '💬', href: '/more' },
+  { label: 'Chart', icon: '📈', href: '/more' },
 ];
 
 const FEATURE_CARDS = [
@@ -80,13 +82,14 @@ export function HomePage({ onSend, sending, selectedModel, onModelChange }: Home
           {/* Category pills */}
           <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
             {CATEGORIES.map((cat) => (
-              <button
+              <Link
                 key={cat.label}
+                href={cat.href}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-100 text-sm text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold shadow-sm"
               >
                 <span className="text-base">{cat.icon}</span>
                 {cat.label}
-              </button>
+              </Link>
             ))}
           </div>
 

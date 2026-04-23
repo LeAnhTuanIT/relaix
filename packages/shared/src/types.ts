@@ -57,3 +57,13 @@ export interface PaginatedResponse<T> {
   limit: number;
   totalPages: number;
 }
+
+// ─── User Types ──────────────────────────────────────────────────────────────
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  avatar?: string;
+  googleId?: string;
+}

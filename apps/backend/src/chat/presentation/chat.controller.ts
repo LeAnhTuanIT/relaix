@@ -10,11 +10,13 @@ import {
   Res,
   UploadedFile,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import { Response } from 'express';
+import { JwtAuthGuard } from '../../auth/infrastructure/guards/jwt-auth.guard';
 import { CreateConversationUseCase } from '../application/use-cases/create-conversation.use-case';
 import { GetConversationsUseCase } from '../application/use-cases/get-conversations.use-case';
 import { DeleteConversationUseCase } from '../application/use-cases/delete-conversation.use-case';
@@ -48,6 +50,7 @@ function toConversationDto(conv: ConversationEntity) {
 }
 
 @Controller('chat')
+@UseGuards(JwtAuthGuard)
 export class ChatController {
   constructor(
     private readonly createConversationUseCase: CreateConversationUseCase,
