@@ -15,13 +15,46 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import { Response } from 'express';
+import { JwtAuthGuard } from '../../auth/infrastructure/guards/jwt-auth.guard';
+import { CreateConversationUseCase } from '../application/use-cases/create-conversation.use-case';
+import { GetConversationsUseCase } from '../application/use-cases/get-conversations.use-case';
+import { DeleteConversationUseCase } from '../application/use-cases/delete-conversation.use-case';
+import { GetMessagesUseCase } from '../application/use-cases/get-messages.use-case';
+import { SendMessageUseCase } from '../application/use-cases/send-message.use-case';
+import { StreamMessageUseCase } from '../application/use-cases/stream-message.use-case';
+import { CreateConversationDto } from './dto/create-conversation.dto';
+import { SendMessageDto } from './dto/send-message.dto';
+import { MessageEntity } from '../domain/entities/message.entity';
+import { ConversationEntity } from '../domain/entities/conversation.entity';
 
 // Configure Cloudinary globally
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: 'dp5v0qf0s',
+  api_key: '163448959224664',
+  api_secret: '9aR7X7Xv3pY8Hz-14iDG6zfljvA',
 });
+
+function toMessageDto(msg: MessageEntity) {
+  return {
+    _id: msg.id,
+    conversationId: msg.conversationId,
+    role: msg.role,
+    content: msg.content,
+    fileUrl: msg.fileUrl,
+    fileName: msg.fileName,
+    createdAt: msg.createdAt,
+  };
+}
+
+function toConversationDto(conv: ConversationEntity) {
+  return {
+    _id: conv.id,
+    title: conv.title,
+    createdAt: conv.createdAt,
+    updatedAt: conv.updatedAt,
+  };
+}
 
 @Controller('chat')
 @UseGuards(JwtAuthGuard)
@@ -96,10 +129,10 @@ export class ChatController {
 
       const aiMessage = await commit(fullText);
       send({ type: 'done', message: toMessageDto(aiMessage) });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Stream error:', err);
-      // Try to extract a more helpful message from Vercel AI SDK error
-      const message = err.message || (err.data && err.data.error && err.data.error.message) || 'AI Provider Error';
+      const error = err as any;
+      const message = error.message || (error.data && error.data.error && error.data.error.message) || 'AI Provider Error';
       send({ type: 'error', message: `AI Error: ${message}` });
     } finally {
       res.end();
@@ -120,12 +153,13 @@ export class ChatController {
       }),
     }),
   )
-  uploadFile(@UploadedFile() file: any) {
+  uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) return { fileUrl: null, fileName: null };
 
+    const cloudFile = file as any;
     return {
-      fileUrl: file.path || file.secure_url,
-      fileName: file.originalname,
+      fileUrl: cloudFile.path || cloudFile.secure_url,
+      fileName: cloudFile.originalname,
     };
   }
 }

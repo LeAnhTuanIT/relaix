@@ -40,9 +40,11 @@ export interface ApiResponse<T> {
 
 export interface User {
   id: string;
-  name: string;
   email: string;
-  createdAt: string;
+  name: string;
+  avatar?: string;
+  googleId?: string;
+  createdAt?: string;
 }
 
 export interface PaginationParams {
@@ -56,14 +58,4 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
   totalPages: number;
-}
-
-// ─── User Types ──────────────────────────────────────────────────────────────
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  avatar?: string;
-  googleId?: string;
 }

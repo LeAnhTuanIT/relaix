@@ -8,7 +8,6 @@ import {
   Req,
   Res,
   UseGuards,
-  UnauthorizedException,
   ConflictException,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
@@ -19,7 +18,6 @@ import { LocalAuthGuard } from '../infrastructure/guards/local-auth.guard';
 import { JwtAuthGuard } from '../infrastructure/guards/jwt-auth.guard';
 import { GoogleAuthGuard } from '../infrastructure/guards/google-auth.guard';
 import { RegisterDto } from './dto/auth.dto';
-import { UserEntity } from '../../user/domain/entities/user.entity';
 
 @Controller('auth')
 export class AuthController {
@@ -41,10 +39,11 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Req() req: any, @Res({ passthrough: true }) res: Response) {
-    const token = await this.authService.generateToken(req.user);
+  async login(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const user = req.user as any;
+    const token = await this.authService.generateToken(user);
     this.setCookie(res, token);
-    return req.user;
+    return user;
   }
 
   @UseGuards(GoogleAuthGuard)
@@ -55,8 +54,9 @@ export class AuthController {
 
   @UseGuards(GoogleAuthGuard)
   @Get('google/callback')
-  async googleAuthCallback(@Req() req: any, @Res() res: Response) {
-    const token = await this.authService.generateToken(req.user);
+  async googleAuthCallback(@Req() req: Request, @Res() res: Response) {
+    const user = req.user as any;
+    const token = await this.authService.generateToken(user);
     this.setCookie(res, token);
     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
     res.redirect(frontendUrl);
@@ -67,14 +67,14 @@ export class AuthController {
   async logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('auth_token', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: this.configService.get<string>('NODE_ENV') === 'production',
       sameSite: 'lax',
     });
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  getMe(@Req() req: any) {
+  getMe(@Req() req: Request) {
     return req.user;
   }
 

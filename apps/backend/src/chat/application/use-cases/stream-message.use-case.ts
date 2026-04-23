@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConversationRepository } from '../../domain/repositories/conversation.repository';
 import { MessageRepository } from '../../domain/repositories/message.repository';
-import { AiProviderPort } from '../../domain/ports/ai-provider.port';
+import { AiProviderPort, AiMessage } from '../../domain/ports/ai-provider.port';
 import { MessageEntity } from '../../domain/entities/message.entity';
 
 export class StreamMessageDto {
@@ -27,6 +27,10 @@ export class StreamMessageUseCase {
     const conv = await this.conversationRepo.findById(conversationId);
     if (!conv) throw new NotFoundException('Conversation not found');
 
+    // 1. Lấy lịch sử tin nhắn trước đó
+    const previousMessages = await this.messageRepo.findByConversationId(conversationId);
+    
+    // 2. Tạo tin nhắn mới của người dùng
     const userMessage = await this.messageRepo.create({
       conversationId,
       role: 'user',
@@ -35,11 +39,21 @@ export class StreamMessageUseCase {
       fileName: dto.fileName,
     });
 
-    const textStream = this.aiProvider.streamResponse(
-      dto.content,
-      userMessage.fileUrl ? { url: userMessage.fileUrl, name: userMessage.fileName } : undefined,
-      dto.model,
-    );
+    // 3. Chuẩn bị history cho AI Provider
+    const history: AiMessage[] = [
+      ...previousMessages.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+        attachment: msg.fileUrl ? { url: msg.fileUrl, name: msg.fileName } : undefined,
+      })),
+      {
+        role: 'user',
+        content: dto.content,
+        attachment: dto.fileUrl ? { url: dto.fileUrl, name: dto.fileName } : undefined,
+      }
+    ];
+
+    const textStream = this.aiProvider.streamResponse(history, dto.model);
 
     const commit = async (fullText: string): Promise<MessageEntity> => {
       const aiMessage = await this.messageRepo.create({

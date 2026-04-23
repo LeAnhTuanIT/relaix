@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AiProviderPort } from '../../domain/ports/ai-provider.port';
+import { AiProviderPort, AiMessage } from '../../domain/ports/ai-provider.port';
 
 @Injectable()
 export class AiMockAdapter extends AiProviderPort {
@@ -10,13 +10,15 @@ export class AiMockAdapter extends AiProviderPort {
     `Tôi sẽ giúp bạn khám phá chủ đề này sâu hơn.`,
   ];
 
-  async generateResponse(userContent: string): Promise<string> {
+  async generateResponse(history: AiMessage[]): Promise<string> {
+    const lastMessage = history[history.length - 1];
+    const userContent = lastMessage?.content || '';
     const base = this.responses[Math.floor(Math.random() * this.responses.length)];
     return `${base} (Phản hồi cho: "${userContent.slice(0, 30)}...")`;
   }
 
-  async *streamResponse(userContent: string): AsyncIterable<string> {
-    const full = await this.generateResponse(userContent);
+  async *streamResponse(history: AiMessage[]): AsyncIterable<string> {
+    const full = await this.generateResponse(history);
     const words = full.split(' ');
     for (const word of words) {
       yield word + ' ';

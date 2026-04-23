@@ -14,10 +14,15 @@ interface ChatWindowProps {
 }
 
 export function ChatWindow({ messages, loading, sending, streamingText }: ChatWindowProps) {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (scrollRef.current) {
+      const scrollContainer = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    }
   }, [messages, streamingText, sending]);
 
   if (loading) {
@@ -29,7 +34,7 @@ export function ChatWindow({ messages, loading, sending, streamingText }: ChatWi
   }
 
   return (
-    <ScrollArea className="flex-1">
+    <ScrollArea ref={scrollRef} className="flex-1">
       <div className="max-w-3xl mx-auto px-4 py-8">
         {messages.map((msg) => (
           <MessageBubble key={msg._id} message={msg} />
@@ -57,8 +62,6 @@ export function ChatWindow({ messages, loading, sending, streamingText }: ChatWi
             </div>
           </div>
         )}
-
-        <div ref={bottomRef} className="h-4" />
       </div>
     </ScrollArea>
   );

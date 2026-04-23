@@ -3,7 +3,13 @@ export interface AiAttachment {
   name?: string;
 }
 
+export interface AiMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  attachment?: AiAttachment;
+}
+
 export abstract class AiProviderPort {
-  abstract generateResponse(userContent: string, attachment?: AiAttachment, model?: string): Promise<string>;
-  abstract streamResponse(userContent: string, attachment?: AiAttachment, model?: string): AsyncIterable<string>;
+  abstract generateResponse(history: AiMessage[], model?: string): Promise<string>;
+  abstract streamResponse(history: AiMessage[], model?: string): AsyncIterable<string>;
 }

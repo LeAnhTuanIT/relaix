@@ -3,6 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-local';
 import * as bcrypt from 'bcryptjs';
 import { UserService } from '../../../user/user.service';
+import { UserEntity } from '../../../user/domain/entities/user.entity';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {
@@ -10,7 +11,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     super({ usernameField: 'email' });
   }
 
-  async validate(email: string, password: string): Promise<any> {
+  async validate(email: string, password: string): Promise<Partial<UserEntity>> {
     const user = await this.userService.findByEmail(email);
     if (!user || !user.password) {
       throw new UnauthorizedException('Invalid credentials');

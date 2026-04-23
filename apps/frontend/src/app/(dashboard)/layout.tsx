@@ -180,7 +180,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {user ? (
               <div className="group relative">
                 <Image 
-                  src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`} 
+                  src={(user as any).avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`} 
                   alt={user.name}
                   width={36}
                   height={36}
