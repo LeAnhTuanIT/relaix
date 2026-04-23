@@ -45,8 +45,8 @@ const MODELS = [
   },
   {
     id: 'gemini-2.0-flash',
-    name: 'Google Gemini 2.0 Flash Lite',
-    description: 'Smart, detailed reasoning and clear answers.',
+    name: 'Google Gemini 2.0 Flash',
+    description: 'Ultra-fast, multimodal AI from Google.',
     icon: <BrainCircuit size={16} className="text-blue-500" />,
     isNew: true,
     provider: 'Google',
@@ -342,7 +342,7 @@ export function ChatInput({
               showModelMenu && 'bg-gray-100 text-blue-600'
             )}
           >
-            {currentModel.id.includes('claude') ? 'Claude Sonnet 4.6' : 'Gemini 2.0 Flash Lite'}
+            {currentModel.id.includes('claude') ? 'Claude Sonnet 4.6' : 'Gemini 1.5 Flash'}
             <ChevronDown size={16} className={cn('text-gray-400 transition-transform duration-300', showModelMenu && 'rotate-180')} />
           </button>
 

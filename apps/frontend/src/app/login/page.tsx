@@ -41,10 +41,10 @@ export default function LoginPage() {
 
       <div className="max-w-md w-full bg-white rounded-[40px] shadow-[0_20px_80px_rgba(0,0,0,0.04)] border border-gray-100 p-10 sm:p-14 relative z-10 animate-in fade-in zoom-in-95 duration-500">
         <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-1 mb-8">
+          <Link href="/" className="inline-flex items-center justify-center gap-1 mb-8 hover:opacity-80 transition-opacity">
             <span className="font-black text-blue-600 text-3xl tracking-tighter uppercase">TEMPLATE</span>
-            <span className="font-medium text-gray-400 text-3xl tracking-tighter">.NET</span>
-          </div>
+            <span className="font-medium text-gray-400 text-3xl tracking-tighter uppercase">.NET</span>
+          </Link>
           <h2 className="text-3xl font-black text-gray-900 tracking-tight">Welcome back</h2>
           <p className="text-gray-500 text-[15px] mt-3 font-medium">Continue your journey with RELAIX.AI</p>
         </div>
@@ -137,7 +137,7 @@ export default function LoginPage() {
         </button>
 
         <p className="mt-12 text-center text-[14px] text-gray-500 font-medium tracking-tight">
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <Link href="/register" className="text-blue-600 font-black hover:underline ml-1">
             Sign up now
           </Link>

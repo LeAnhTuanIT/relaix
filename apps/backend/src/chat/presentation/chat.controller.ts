@@ -15,39 +15,13 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import { Response } from 'express';
-import { JwtAuthGuard } from '../../auth/infrastructure/guards/jwt-auth.guard';
-import { CreateConversationUseCase } from '../application/use-cases/create-conversation.use-case';
-import { GetConversationsUseCase } from '../application/use-cases/get-conversations.use-case';
-import { DeleteConversationUseCase } from '../application/use-cases/delete-conversation.use-case';
-import { GetMessagesUseCase } from '../application/use-cases/get-messages.use-case';
-import { SendMessageUseCase } from '../application/use-cases/send-message.use-case';
-import { StreamMessageUseCase } from '../application/use-cases/stream-message.use-case';
-import { CreateConversationDto } from './dto/create-conversation.dto';
-import { SendMessageDto } from './dto/send-message.dto';
-import { MessageEntity } from '../domain/entities/message.entity';
-import { ConversationEntity } from '../domain/entities/conversation.entity';
 
-function toMessageDto(msg: MessageEntity) {
-  return {
-    _id: msg.id,
-    conversationId: msg.conversationId,
-    role: msg.role,
-    content: msg.content,
-    fileUrl: msg.fileUrl,
-    fileName: msg.fileName,
-    createdAt: msg.createdAt,
-  };
-}
-
-function toConversationDto(conv: ConversationEntity) {
-  return {
-    _id: conv.id,
-    title: conv.title,
-    createdAt: conv.createdAt,
-    updatedAt: conv.updatedAt,
-  };
-}
+// Configure Cloudinary globally
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 @Controller('chat')
 @UseGuards(JwtAuthGuard)
@@ -59,14 +33,7 @@ export class ChatController {
     private readonly getMessagesUseCase: GetMessagesUseCase,
     private readonly sendMessageUseCase: SendMessageUseCase,
     private readonly streamMessageUseCase: StreamMessageUseCase,
-  ) {
-    // Configure Cloudinary
-    cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET,
-    });
-  }
+  ) {}
 
   @Post('conversations')
   async createConversation(@Body() dto: CreateConversationDto) {
@@ -124,7 +91,7 @@ export class ChatController {
       }
 
       if (!fullText.trim()) {
-        throw new Error('AI không trả về kết quả. Vui lòng kiểm tra API Key.');
+        throw new Error('AI không trả về dữ liệu. Có thể do hết Quota hoặc Model không hỗ trợ Region này.');
       }
 
       const aiMessage = await commit(fullText);

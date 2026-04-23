@@ -33,7 +33,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN bun run --cwd apps/frontend build
 
 # ── Stage 4a: Backend runner ───────────────────────────────────────────────────
-FROM node:20-alpine AS backend-runner
+FROM oven/bun:1.2.19-alpine AS backend-runner
 WORKDIR /app
 ENV NODE_ENV=production
 
@@ -47,7 +47,7 @@ COPY --from=backend-builder --chown=nestjs:nodejs /app/apps/backend/dist ./dist
 
 USER nestjs
 EXPOSE 3001
-CMD ["node", "dist/main"]
+CMD ["bun", "run", "dist/main.js"]
 
 # ── Stage 4b: Frontend runner ──────────────────────────────────────────────────
 FROM oven/bun:1.2.19-alpine AS frontend-runner

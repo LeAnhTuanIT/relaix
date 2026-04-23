@@ -11,12 +11,13 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     private readonly userService: UserService,
   ) {
     super({
-      clientID: configService.get<string>('GOOGLE_CLIENT_ID') || 'dummy_id',
-      clientSecret: configService.get<string>('GOOGLE_CLIENT_SECRET') || 'dummy_secret',
-      callbackURL: configService.get<string>('GOOGLE_CALLBACK_URL') || 'http://localhost:3001/auth/google/callback',
+      clientID: configService.get<string>('GOOGLE_CLIENT_ID') as string,
+      clientSecret: configService.get<string>('GOOGLE_CLIENT_SECRET') as string,
+      callbackURL: configService.get<string>('GOOGLE_CALLBACK_URL') as string,
       scope: ['email', 'profile'],
     });
   }
+
 
   async validate(
     accessToken: string,

@@ -3,7 +3,7 @@
 import { ChatWindow } from "@/modules/chat/components/ChatWindow";
 import { ChatInput } from "@/modules/chat/components/ChatInput";
 import { HomePage } from "@/modules/home/components/HomePage";
-import { useChat } from "@/modules/chat/hooks/useChat";
+import { useChat } from "@/modules/chat/providers/chat-provider";
 
 export default function ChatPage() {
   const {

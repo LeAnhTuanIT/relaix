@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createAnthropic } from '@ai-sdk/anthropic';
-import { google } from '@ai-sdk/google';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { generateText, streamText } from 'ai';
 import { AiProviderPort, AiAttachment } from '../../domain/ports/ai-provider.port';
 import axios from 'axios';
@@ -11,21 +11,27 @@ const pdfParse = require('pdf-parse');
 @Injectable()
 export class VercelAiAdapter extends AiProviderPort {
   private readonly anthropic;
+  private readonly googleProvider;
 
   constructor(private readonly configService: ConfigService) {
     super();
     this.anthropic = createAnthropic({
       apiKey: this.configService.get<string>('ANTHROPIC_API_KEY'),
     });
+    this.googleProvider = createGoogleGenerativeAI({
+      apiKey: this.configService.get<string>('GOOGLE_GENERATIVE_AI_API_KEY'),
+    });
   }
 
   private getModel(modelId?: string) {
+    console.log('Phát hiện modelId yêu cầu:', modelId);
     // Map friendly IDs to actual model identifiers from the provided image
     if (modelId === 'claude-sonnet-4.6' || modelId?.includes('claude')) {
       return this.anthropic('claude-sonnet-4-20250514');
     }
     if (modelId === 'gemini-2.0-flash' || modelId?.includes('gemini')) {
-      return google('gemini-2.0-flash-lite-preview-02-05');
+      console.log('Đang dùng Google Gemini Flash Latest (gemini-flash-latest)');
+      return this.googleProvider('gemini-flash-latest');
     }
     
     return this.anthropic('claude-sonnet-4-20250514');

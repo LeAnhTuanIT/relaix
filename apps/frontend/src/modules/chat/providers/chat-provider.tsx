@@ -1,10 +1,30 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { chatApi, type Conversation, type Message } from '@/shared/api/chat.api';
 
-export function useChat() {
+interface ChatContextType {
+  conversations: Conversation[];
+  activeId: string | null;
+  setActiveId: (id: string | null) => void;
+  messages: Message[];
+  loadingMessages: boolean;
+  sending: boolean;
+  streamingText: string;
+  pendingFile: File | null;
+  setPendingFile: (file: File | null) => void;
+  handleCreate: () => Promise<void>;
+  handleSend: (content: string) => Promise<void>;
+  handleHomePageSend: (content: string, file?: File) => Promise<void>;
+  handleDelete: (id: string) => void;
+  selectedModel: string;
+  setSelectedModel: (model: string) => void;
+}
+
+const ChatContext = createContext<ChatContextType | undefined>(undefined);
+
+export function ChatProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -64,7 +84,6 @@ export function useChat() {
           setPendingFile(null);
         }
 
-        // Optimistic user message
         const tempId = `temp-${Date.now()}`;
         const optimisticUser: Message = {
           _id: tempId,
@@ -101,7 +120,7 @@ export function useChat() {
               _id: 'error',
               conversationId: activeId,
               role: 'assistant',
-              content: `Error: ${event.message}`,
+              content: event.message,
               createdAt: new Date().toISOString(),
             };
             queryClient.setQueryData<Message[]>(['messages', activeId], (prev = []) => [
@@ -169,21 +188,33 @@ export function useChat() {
     [isSending, queryClient, selectedModel],
   );
 
-  return {
-    conversations,
-    activeId,
-    setActiveId,
-    messages,
-    loadingMessages,
-    sending: isSending,
-    streamingText,
-    pendingFile,
-    setPendingFile,
-    handleCreate,
-    handleSend,
-    handleHomePageSend,
-    handleDelete: (id: string) => deleteMutation.mutate(id),
-    selectedModel,
-    setSelectedModel,
-  };
+  return (
+    <ChatContext.Provider
+      value={{
+        conversations,
+        activeId,
+        setActiveId,
+        messages,
+        loadingMessages,
+        sending: isSending,
+        streamingText,
+        pendingFile,
+        setPendingFile,
+        handleCreate,
+        handleSend,
+        handleHomePageSend,
+        handleDelete: (id: string) => deleteMutation.mutate(id),
+        selectedModel,
+        setSelectedModel,
+      }}
+    >
+      {children}
+    </ChatContext.Provider>
+  );
 }
+
+export const useChat = () => {
+  const context = useContext(ChatContext);
+  if (!context) throw new Error('useChat must be used within a ChatProvider');
+  return context;
+};
