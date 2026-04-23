@@ -17,6 +17,7 @@ interface ChatInputProps {
   pendingFile?: File | null;
   onClearFile?: () => void;
   appName?: string;
+  isFirstMessage?: boolean;
 }
 
 export function ChatInput({
@@ -26,6 +27,7 @@ export function ChatInput({
   pendingFile,
   onClearFile,
   appName = 'Ask template.net',
+  isFirstMessage = true,
 }: ChatInputProps) {
   const [value, setValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -64,6 +66,7 @@ export function ChatInput({
   };
 
   const hasContent = value.trim().length > 0;
+  const showGenerateButton = isFirstMessage && !hasContent && !pendingFile;
 
   return (
     <div className="relative w-full max-w-4xl mx-auto px-4">
@@ -108,22 +111,22 @@ export function ChatInput({
             disabled={disabled || (!value.trim() && !pendingFile)}
             className={cn(
               'flex items-center justify-center transition-all duration-200',
-              disabled || (!value.trim() && !pendingFile)
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed px-5 py-2.5 rounded-full font-bold text-[14px]'
-                : hasContent 
+              showGenerateButton
+                ? 'bg-[#2b26ff] text-white hover:bg-blue-700 active:scale-95 shadow-sm px-5 py-2.5 rounded-full font-bold text-[14px]'
+                : (hasContent || pendingFile)
                   ? 'bg-[#2b26ff] text-white hover:bg-blue-700 active:scale-95 shadow-md w-10 h-10 rounded-full'
-                  : 'bg-[#2b26ff] text-white hover:bg-blue-700 active:scale-95 shadow-sm px-5 py-2.5 rounded-full font-bold text-[14px]'
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed w-10 h-10 rounded-full'
             )}
           >
             {disabled ? (
               <Loader2 size={18} className="animate-spin" />
-            ) : hasContent ? (
-              <SendHorizontal size={20} className="text-white" />
-            ) : (
+            ) : showGenerateButton ? (
               <>
                 <Sparkles size={16} fill="white" className="mr-2" />
                 Generate Free
               </>
+            ) : (
+              <SendHorizontal size={20} className={cn((hasContent || pendingFile) ? "text-white" : "text-gray-400")} />
             )}
           </button>
         </div>

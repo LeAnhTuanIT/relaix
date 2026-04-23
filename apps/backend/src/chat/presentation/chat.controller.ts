@@ -150,6 +150,8 @@ export class ChatController {
           folder: 'relaix-chat',
           allowed_formats: ['jpg', 'png', 'jpeg', 'gif', 'webp', 'pdf', 'txt', 'docx'],
           resource_type: 'auto',
+          type: 'upload', // Đảm bảo kiểu là public upload
+          access_mode: 'public', // Ép quyền truy cập công khai
         } as Record<string, unknown>,
       }),
     }),
@@ -158,8 +160,15 @@ export class ChatController {
     if (!file) return { fileUrl: null, fileName: null };
 
     const cloudFile = file as Express.Multer.File & { path?: string; secure_url?: string };
+    
+    // Cloudinary thỉnh thoảng trả về http thay vì https, chúng ta nên ép sang https
+    let url = cloudFile.path || cloudFile.secure_url;
+    if (url && url.startsWith('http:')) {
+      url = url.replace('http:', 'https:');
+    }
+
     return {
-      fileUrl: cloudFile.path || cloudFile.secure_url,
+      fileUrl: url,
       fileName: cloudFile.originalname,
     };
   }

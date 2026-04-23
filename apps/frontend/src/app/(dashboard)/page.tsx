@@ -38,6 +38,7 @@ export default function ChatPage() {
                 pendingFile={pendingFile}
                 onClearFile={() => setPendingFile(null)}
                 appName="Ask template.net"
+                isFirstMessage={messages.length === 0}
               />
             </div>
           </div>
