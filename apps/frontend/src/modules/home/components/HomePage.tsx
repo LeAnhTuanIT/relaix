@@ -43,11 +43,9 @@ const FEATURE_CARDS = [
 interface HomePageProps {
   onSend: (content: string, file?: File) => void;
   sending: boolean;
-  selectedModel: string;
-  onModelChange: (model: string) => void;
 }
 
-export function HomePage({ onSend, sending, selectedModel, onModelChange }: HomePageProps) {
+export function HomePage({ onSend, sending }: HomePageProps) {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [showChat, setShowChat] = useState(false);
 
@@ -72,10 +70,7 @@ export function HomePage({ onSend, sending, selectedModel, onModelChange }: Home
               disabled={sending}
               pendingFile={pendingFile}
               onClearFile={() => setPendingFile(null)}
-              appName="Enter text or voice to design a logo for a sustainable fashion startup named EcoWeave, featuring"
-              selectedModel={selectedModel}
-              onModelChange={onModelChange}
-              menuDirection="down"
+              appName="Ask template.net"
             />
           </div>
 

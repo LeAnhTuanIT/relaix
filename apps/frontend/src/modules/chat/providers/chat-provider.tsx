@@ -18,8 +18,6 @@ interface ChatContextType {
   handleSend: (content: string) => Promise<void>;
   handleHomePageSend: (content: string, file?: File) => Promise<void>;
   handleDelete: (id: string) => void;
-  selectedModel: string;
-  setSelectedModel: (model: string) => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -30,7 +28,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [streamingText, setStreamingText] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('claude-sonnet-4.6');
 
   // ── Conversations ──────────────────────────────────────────────
   const { data: conversations = [] } = useQuery<Conversation[]>({
@@ -100,7 +97,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         ]);
 
         let fullText = '';
-        for await (const event of chatApi.streamMessage(activeId, content, fileUrl, fileName, selectedModel)) {
+        for await (const event of chatApi.streamMessage(activeId, content, fileUrl, fileName, 'gemini-2.0-flash')) {
           if (event.type === 'chunk') {
             fullText += event.text;
             setStreamingText(fullText);
@@ -137,7 +134,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setIsSending(false);
       }
     },
-    [activeId, isSending, pendingFile, queryClient, selectedModel],
+    [activeId, isSending, pendingFile, queryClient],
   );
 
   const handleHomePageSend = useCallback(
@@ -162,7 +159,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         const newMessages: Message[] = [];
         let fullText = '';
 
-        for await (const event of chatApi.streamMessage(conv._id, content, fileUrl, fileName, selectedModel)) {
+        for await (const event of chatApi.streamMessage(conv._id, content, fileUrl, fileName, 'gemini-2.0-flash')) {
           if (event.type === 'user_message') {
             newMessages[0] = event.message;
             queryClient.setQueryData<Message[]>(['messages', conv._id], [event.message]);
@@ -185,7 +182,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setIsSending(false);
       }
     },
-    [isSending, queryClient, selectedModel],
+    [isSending, queryClient],
   );
 
   return (
@@ -204,8 +201,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         handleSend,
         handleHomePageSend,
         handleDelete: (id: string) => deleteMutation.mutate(id),
-        selectedModel,
-        setSelectedModel,
       }}
     >
       {children}

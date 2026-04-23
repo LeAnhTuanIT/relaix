@@ -16,8 +16,6 @@ export default function ChatPage() {
     setPendingFile,
     handleSend,
     handleHomePageSend,
-    selectedModel,
-    setSelectedModel,
   } = useChat();
 
   return (
@@ -32,16 +30,14 @@ export default function ChatPage() {
               streamingText={streamingText}
             />
 
-            <div className="px-4 pb-8 pt-2 max-w-3xl mx-auto w-full flex-shrink-0 relative z-40">
+            <div className="pb-8 pt-4 w-full flex-shrink-0 relative z-40">
               <ChatInput
                 onSend={handleSend}
                 onFileSelect={setPendingFile}
                 disabled={sending}
                 pendingFile={pendingFile}
                 onClearFile={() => setPendingFile(null)}
-                selectedModel={selectedModel}
-                onModelChange={setSelectedModel}
-                menuDirection="up"
+                appName="Ask template.net"
               />
             </div>
           </div>
@@ -50,8 +46,6 @@ export default function ChatPage() {
         <HomePage
           onSend={handleHomePageSend}
           sending={sending}
-          selectedModel={selectedModel}
-          onModelChange={setSelectedModel}
         />
       )}
     </div>
