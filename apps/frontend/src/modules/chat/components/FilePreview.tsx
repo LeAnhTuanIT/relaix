@@ -17,24 +17,11 @@ function isPdf(fileName: string) {
 }
 
 export function FilePreview({ fileUrl, fileName }: FilePreviewProps) {
-  // Hàm tạo URL tải xuống chuyên dụng của Cloudinary bằng cách thêm flag attachment
-  const getDownloadUrl = (url: string) => {
-    if (!url) return '';
-    // Nếu là URL Cloudinary, thêm tham số để ép tải xuống
-    if (url.includes('cloudinary.com')) {
-      // Chèn fl_attachment vào sau /upload/
-      return url.replace('/upload/', '/upload/fl_attachment/');
-    }
-    return url;
-  };
-
   const handleDownload = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Chúng ta sẽ để trình duyệt tự xử lý tải xuống qua link chuẩn 
-    // để tránh các lỗi Unauthorized khi dùng fetch thủ công.
   };
 
-  const downloadUrl = getDownloadUrl(fileUrl);
+  const downloadUrl = `${process.env.NEXT_PUBLIC_API_URL}/chat/download?url=${encodeURIComponent(fileUrl)}&name=${encodeURIComponent(fileName)}`;
 
   if (isImage(fileName)) {
     return (

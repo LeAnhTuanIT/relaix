@@ -7,14 +7,15 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
   Res,
   UploadedFile,
   UseInterceptors,
   UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import { Response } from 'express';
 import { JwtAuthGuard } from '../../auth/infrastructure/guards/jwt-auth.guard';
 import { CreateConversationUseCase } from '../application/use-cases/create-conversation.use-case';
@@ -28,13 +29,6 @@ import { SendMessageDto } from './dto/send-message.dto';
 import { MessageEntity } from '../domain/entities/message.entity';
 import { ConversationEntity } from '../domain/entities/conversation.entity';
 
-// Configure Cloudinary instance
-const cloudinaryInstance = cloudinary;
-cloudinaryInstance.config({
-  cloud_name: 'dp5v0qf0s',
-  api_key: '163448959224664',
-  api_secret: '9aR7X7Xv3pY8Hz-14iDG6zfljvA',
-});
 
 function toMessageDto(msg: MessageEntity) {
   return {
@@ -140,36 +134,67 @@ export class ChatController {
     }
   }
 
+  @Get('download')
+  async downloadFile(
+    @Query('url') url: string,
+    @Query('name') name: string,
+    @Res() res: Response,
+  ) {
+    if (!url || !url.includes('cloudinary.com')) {
+      res.status(400).end('Invalid URL');
+      return;
+    }
+
+    const https = await import('https');
+    const safeName = name ? encodeURIComponent(name) : 'download';
+
+    const request = https.get(url, (upstream) => {
+      if (upstream.statusCode !== 200) {
+        res.status(upstream.statusCode ?? 502).end('Failed to fetch file');
+        return;
+      }
+
+      const contentType = upstream.headers['content-type'] || 'application/octet-stream';
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${safeName}`);
+      res.setHeader('Cache-Control', 'no-store');
+
+      upstream.pipe(res as unknown as import('stream').Writable);
+    });
+
+    request.on('error', () => res.status(502).end('Upstream error'));
+  }
+
   @Post('upload')
   @UseInterceptors(
     FileInterceptor('file', {
-      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-      storage: new CloudinaryStorage({
-        cloudinary: cloudinaryInstance,
-        params: {
-          folder: 'relaix-chat',
-          allowed_formats: ['jpg', 'png', 'jpeg', 'gif', 'webp', 'pdf', 'txt', 'docx'],
-          resource_type: 'auto',
-          type: 'upload', // Đảm bảo kiểu là public upload
-          access_mode: 'public', // Ép quyền truy cập công khai
-        } as Record<string, unknown>,
-      }),
+      storage: memoryStorage(),
+      limits: { fileSize: 10 * 1024 * 1024 },
     }),
   )
-  uploadFile(@UploadedFile() file: Express.Multer.File) {
+  async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) return { fileUrl: null, fileName: null };
 
-    const cloudFile = file as Express.Multer.File & { path?: string; secure_url?: string };
-    
-    // Cloudinary thỉnh thoảng trả về http thay vì https, chúng ta nên ép sang https
-    let url = cloudFile.path || cloudFile.secure_url;
-    if (url && url.startsWith('http:')) {
-      url = url.replace('http:', 'https:');
-    }
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+
+    const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: 'relaix-chat', resource_type: 'auto' },
+        (error, result) => {
+          if (error || !result) return reject(error);
+          resolve(result);
+        },
+      );
+      stream.end(file.buffer);
+    });
 
     return {
-      fileUrl: url,
-      fileName: cloudFile.originalname,
+      fileUrl: result.secure_url,
+      fileName: file.originalname,
     };
   }
 }
