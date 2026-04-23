@@ -7,6 +7,7 @@ import {
   Loader2,
   Sparkles,
   X,
+  SendHorizontal,
 } from 'lucide-react';
 
 interface ChatInputProps {
@@ -62,6 +63,8 @@ export function ChatInput({
     e.target.value = '';
   };
 
+  const hasContent = value.trim().length > 0;
+
   return (
     <div className="relative w-full max-w-4xl mx-auto px-4">
       <div className="border border-gray-200 rounded-[20px] bg-white shadow-sm transition-all duration-300 focus-within:border-blue-400 focus-within:shadow-md min-h-[140px] flex flex-col">
@@ -104,17 +107,21 @@ export function ChatInput({
             onClick={handleSubmit}
             disabled={disabled || (!value.trim() && !pendingFile)}
             className={cn(
-              'flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-[14px] transition-all duration-200',
+              'flex items-center justify-center transition-all duration-200',
               disabled || (!value.trim() && !pendingFile)
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-[#2b26ff] text-white hover:bg-blue-700 active:scale-95 shadow-sm'
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed px-5 py-2.5 rounded-full font-bold text-[14px]'
+                : hasContent 
+                  ? 'bg-[#2b26ff] text-white hover:bg-blue-700 active:scale-95 shadow-md w-10 h-10 rounded-full'
+                  : 'bg-[#2b26ff] text-white hover:bg-blue-700 active:scale-95 shadow-sm px-5 py-2.5 rounded-full font-bold text-[14px]'
             )}
           >
             {disabled ? (
               <Loader2 size={18} className="animate-spin" />
+            ) : hasContent ? (
+              <SendHorizontal size={20} className="text-white" />
             ) : (
               <>
-                <Sparkles size={16} fill="white" />
+                <Sparkles size={16} fill="white" className="mr-2" />
                 Generate Free
               </>
             )}

@@ -28,8 +28,9 @@ import { SendMessageDto } from './dto/send-message.dto';
 import { MessageEntity } from '../domain/entities/message.entity';
 import { ConversationEntity } from '../domain/entities/conversation.entity';
 
-// Configure Cloudinary globally
-cloudinary.config({
+// Configure Cloudinary instance
+const cloudinaryInstance = cloudinary;
+cloudinaryInstance.config({
   cloud_name: 'dp5v0qf0s',
   api_key: '163448959224664',
   api_secret: '9aR7X7Xv3pY8Hz-14iDG6zfljvA',
@@ -144,7 +145,7 @@ export class ChatController {
     FileInterceptor('file', {
       limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
       storage: new CloudinaryStorage({
-        cloudinary: cloudinary,
+        cloudinary: cloudinaryInstance,
         params: {
           folder: 'relaix-chat',
           allowed_formats: ['jpg', 'png', 'jpeg', 'gif', 'webp', 'pdf', 'txt', 'docx'],

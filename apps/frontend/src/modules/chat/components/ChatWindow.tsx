@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { ScrollArea } from '@/shared/components/ui/scroll-area';
 import { MessageBubble } from './MessageBubble';
 import { type Message } from '@/shared/api/chat.api';
 import { Loader2 } from 'lucide-react';
@@ -15,13 +14,11 @@ interface ChatWindowProps {
 
 export function ChatWindow({ messages, loading, sending, streamingText }: ChatWindowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      const scrollContainer = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
-      }
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: 'auto' });
     }
   }, [messages, streamingText, sending]);
 
@@ -34,8 +31,11 @@ export function ChatWindow({ messages, loading, sending, streamingText }: ChatWi
   }
 
   return (
-    <ScrollArea ref={scrollRef} className="flex-1">
-      <div className="max-w-3xl mx-auto px-4 py-8">
+    <div 
+      ref={scrollRef} 
+      className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar bg-white"
+    >
+      <div className="max-w-4xl mx-auto px-6 py-10 min-h-full flex flex-col">
         {messages.map((msg) => (
           <MessageBubble key={msg._id} message={msg} />
         ))}
@@ -62,7 +62,10 @@ export function ChatWindow({ messages, loading, sending, streamingText }: ChatWi
             </div>
           </div>
         )}
+        
+        {/* Anchor for automatic scrolling */}
+        <div ref={bottomRef} className="h-4 w-full flex-shrink-0" />
       </div>
-    </ScrollArea>
+    </div>
   );
 }
