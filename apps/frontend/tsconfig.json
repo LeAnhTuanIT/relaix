@@ -29,6 +29,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@relaix/shared": [
+        "../../packages/shared/src/index.ts"
       ]
     },
     "allowJs": true,
