@@ -342,7 +342,7 @@ export function ChatInput({
               showModelMenu && 'bg-gray-100 text-blue-600'
             )}
           >
-            {currentModel.id.includes('claude') ? 'Claude Sonnet 4.6' : 'Gemini 1.5 Flash'}
+            {currentModel.id.includes('claude') ? 'Claude Sonnet 4.6' : 'Gemini 2.0 Flash'}
             <ChevronDown size={16} className={cn('text-gray-400 transition-transform duration-300', showModelMenu && 'rotate-180')} />
           </button>
 
@@ -373,7 +373,7 @@ export function ChatInput({
             ) : (
               <>
                 <Sparkles size={18} fill="currentColor" />
-                Generate
+                Generate Free
               </>
             )}
           </button>
