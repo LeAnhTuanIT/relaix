@@ -131,8 +131,8 @@ export class ChatController {
       send({ type: 'done', message: toMessageDto(aiMessage) });
     } catch (err: unknown) {
       console.error('Stream error:', err);
-      const error = err as any;
-      const message = error.message || (error.data && error.data.error && error.data.error.message) || 'AI Provider Error';
+      const error = err as Error & { data?: { error?: { message?: string } } };
+      const message = error.message || error.data?.error?.message || 'AI Provider Error';
       send({ type: 'error', message: `AI Error: ${message}` });
     } finally {
       res.end();
@@ -149,14 +149,14 @@ export class ChatController {
           folder: 'relaix-chat',
           allowed_formats: ['jpg', 'png', 'jpeg', 'gif', 'webp', 'pdf', 'txt', 'docx'],
           resource_type: 'auto',
-        } as any,
+        } as Record<string, unknown>,
       }),
     }),
   )
   uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) return { fileUrl: null, fileName: null };
 
-    const cloudFile = file as any;
+    const cloudFile = file as Express.Multer.File & { path?: string; secure_url?: string };
     return {
       fileUrl: cloudFile.path || cloudFile.secure_url,
       fileName: cloudFile.originalname,

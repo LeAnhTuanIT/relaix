@@ -104,7 +104,7 @@ export class VercelAiAdapter extends AiProviderPort {
     
     const { text } = await generateText({
       model: model,
-      messages: messages as any,
+      messages: messages as CoreMessage[],
     });
     return text;
   }
@@ -115,7 +115,7 @@ export class VercelAiAdapter extends AiProviderPort {
 
     const result = streamText({
       model: model,
-      messages: messages as any,
+      messages: messages as CoreMessage[],
     });
     
     for await (const chunk of result.textStream) {

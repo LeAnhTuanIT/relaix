@@ -22,10 +22,16 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   async validate(
     accessToken: string,
     refreshToken: string,
-    profile: any, // Profile from passport-google-oauth20 is complex, 'any' is common here
+    profile: unknown,
     done: VerifyCallback,
   ): Promise<void> {
-    const { id, emails, displayName, photos } = profile;
+    const googleProfile = profile as {
+      id: string;
+      emails: { value: string }[];
+      displayName: string;
+      photos: { value: string }[];
+    };
+    const { id, emails, displayName, photos } = googleProfile;
     const email = emails[0].value;
 
     let user = await this.userService.findByGoogleId(id);
